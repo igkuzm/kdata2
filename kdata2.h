@@ -27,6 +27,10 @@
 #include "cYandexDisk/cJSON.h"
 #include "cYandexDisk/uuid4/uuid4.h"
 
+#define DATABASE "kdata_database"
+#define DATAFILES "kdata_data"
+#define DELETED "kdata_deleted"
+
 enum KDATA2_TYPE {
 	KDATA2_TYPE_NUMBER,        // SQLite INT 
 	KDATA2_TYPE_TEXT,		   // SQLite TEXT

@@ -38,22 +38,6 @@ static void _kdata_free_data(kdata2_t * d){
 	if (!d->tables)
 		return;
 	
-	//kdata2_tab_t ** tables = d->tables; // pointer to iterate
-	//while (*tables) {
-		/* for each table */
-		//kdata2_tab_t *tab = *tables++;		
-
-		//kdata2_col_t ** columns = tab->columns; // pointer to iterate
-		//while (*columns) {
-			/* for each column in table */
-			//kdata2_col_t *col = *columns++;
-			//free(col);
-		//}	
-		
-		//free(tab->columns);
-		//free(tab);
-	//}	
-	//free(d->tables);
 	free(d);
 }
 
@@ -69,27 +53,41 @@ struct kdata2_update {
 	char column[128];
 };
 
-struct list {
-	void *data;
-	struct list *prev;
-};
-
 static int _remove_local_update(void *user_data, char *error){
+	struct kdata2_update *update = user_data;
+	if (!update){
+		ERR("ERROR! _remove_local_update: data is NULL\n");
+		return -1;
+	}
+	
 	if (error){
-		perror(error);
+		if (update->d)
+			if (update->d->callback)
+				update->d->callback(update->d->user_data, error);
 		return 0;
 	}
-	struct kdata2_update *update = user_data;
+
+	char *errmsg = NULL;
+	char *SQL;
+
 	/* remove from local update table */
-	sqlite_connect_execute(
-			STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", update->uuid), 
-					update->d->filepath);	
+	SQL = STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", update->uuid); 
+	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
+	if (errmsg){
+		ERR("ERROR! _remove_local_update: sqlite3_exec: %s\n", errmsg);	
+		return -1;
+	}	
 
 	/* set new timestamp for data */
-	sqlite_connect_execute(
-			STR("UPDATE '%s' SET timestamp = %ld WHERE uuid = '%s'", 
-					update->table, update->timestamp, update->uuid), 
-							update->d->filepath);	
+	SQL = STR("UPDATE '%s' SET timestamp = %ld WHERE uuid = '%s'", 
+					update->table, update->timestamp, update->uuid); 
+	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
+	if (errmsg){
+		ERR("ERROR! _remove_local_update: sqlite3_exec: %s\n", errmsg);	
+		return -1;
+	}		
+
+	free(update);
 	return 0;
 }
 
@@ -260,7 +258,13 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 	kdata2_t *d = user_data;
 
 	/* new kdata_update */
-	struct kdata2_update update;
+	struct kdata2_update *update = NEW(struct kdata2_update);
+	if (!update){
+		if (d->callback)
+			d->callback(d->user_data, 
+					STR("ERROR! _for_each_update_in_SQLite: can't allocate memory for struct kdata2_update\n"));
+		return -1;
+	}
 
 	int i;
 	for (i = 0; i < argc; ++i) {
@@ -272,66 +276,75 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 		}
 		/* fill update with data */
 		switch (i) {
-			case 0: strcpy (update.table, buf)     ; break;
-			case 1: strncpy(update.uuid,  buf, 36) ; update.uuid[36] = 0; break;
-			case 2: update.timestamp = atol(buf)   ; break;
-			case 3: update.local = atoi(buf)       ; break;
-			case 4: update.deleted = atoi(buf)     ; break;
+			case 0: strcpy (update->table, buf)     ; break;
+			case 1: strncpy(update->uuid,  buf, 36) ; update->uuid[36] = 0; break;
+			case 2: update->timestamp = atol(buf)   ; break;
+			case 3: update->local = atoi(buf)       ; break;
+			case 4: update->deleted = atoi(buf)     ; break;
 		}
 	}
 
 	/* set data to use in callback */
-	update.d = d;
+	update->d = d;
 	
 	/* path to remote data */
-	char *filepath = STR("app:/database/%s", update.uuid);
+	char *filepath = STR("app:/%s/%s", DATABASE, update->uuid);
 
 	/* if local update is deleted -> move remote data to deleted */
-	if (update.deleted) {
+	if (update->deleted) {
 		c_yandex_disk_mv(d->access_token, filepath, 
-				STR("app:/deleted/%s/%s", update.table, update.uuid), true, 
-						&update, _remove_local_update);
+				STR("app:/%s/%s", DELETED, update->uuid), true, 
+						update, _remove_local_update);
 
 		return 0;
 	}
 
-	char *error = NULL;
+	char *errmsg = NULL;
 
 	/* check remote data exists */
 	c_yd_file_t remote;
-	c_yandex_disk_file_info(d->access_token, filepath, &remote, &error);
+	c_yandex_disk_file_info(d->access_token, filepath, &remote, &errmsg);
 
-	if (error){
-		if (strcmp(error, "UnauthorizedError") == 0){
+	if (errmsg){
+		if (strcmp(errmsg, "UnauthorizedError") == 0){
 			if (d->callback)
-				d->callback(d->user_data, STR("_for_each_update_in_SQLite: Unauthorized to Yandex Disk\n"));
+				d->callback(d->user_data, STR("ERROR! _for_each_update_in_SQLite: Unauthorized to Yandex Disk\n"));
+			
+			free(update);
 			return -1;
 		}
 	}
 
 	if (remote.name[0] != 0) {
 		/* check timestamp */
-		if (update.timestamp > remote.modified) {
+		if (update->timestamp > remote.modified) {
 			/* upload local data to Yandex Disk */
-			_upload_local_data_to_Yandex_Disk(&update);
+			_upload_local_data_to_Yandex_Disk(update);
+			return 0;
 		} else {
 			/* no need to upload data, remove from local update table */
-			_remove_local_update(&update, NULL);
+			_remove_local_update(update, NULL);
+			return 0;
 		}
 		
 	} else {
-		if (error){
-			if (strcmp(error, "DiskNotFoundError") == 0){
+		if (errmsg){
+			if (strcmp(errmsg, "DiskNotFoundError") == 0){
 				/* no remote data -> upload local data to Yandex Disk */
-				_upload_local_data_to_Yandex_Disk(&update);
+				_upload_local_data_to_Yandex_Disk(update);
+				return 0;
 			} else {
 				if (d->callback)
-					d->callback(d->user_data, STR("YandexDisk: %s\n", error));
+					d->callback(d->user_data, STR("YandexDisk: %s\n", errmsg));
+				
+				free(update);
 				return -1;
 			}
 		}
 		if (d->callback)
 			d->callback(d->user_data, STR("ERROR! _for_each_update_in_SQLite: unknown error\n"));
+			
+		free(update);
 		return -1;
 	}	
 
@@ -586,6 +599,25 @@ static void _yd_update(kdata2_t *d){
 	 */
 
 	char *errmsg = NULL;
+
+	/* check Yandex Disk Connection */
+	if (c_yandex_disk_file_info(d->access_token, "app:/", NULL, &errmsg)){
+		if (d->callback)
+			d->callback(d->user_data, STR("ERROR! _yd_update: can't connect to Yandex Disk\n"));
+		return;
+	}	
+	
+	if (errmsg){
+		if (d->callback)
+			d->callback(d->user_data, STR("ERROR! _yd_update: %s\n", errmsg));
+		return;
+	}	
+
+	/* Create Yandex Disk database */
+	c_yandex_disk_mkdir(d->access_token, STR("app:/%s", DATABASE ), NULL);
+	c_yandex_disk_mkdir(d->access_token, STR("app:/%s", DELETED  ), NULL);
+	c_yandex_disk_mkdir(d->access_token, STR("app:/%s", DATAFILES), NULL);
+
 	char *SQL;
 	
 	/* do for each update in local updates table */
@@ -625,26 +657,6 @@ static void * _yd_thread(void * data){
 
 static void _yd_daemon_init(kdata2_t * d){
 	int err;
-
-	/* Create Yandex Disk database */
-	char *error = NULL;
-	c_yandex_disk_mkdir(d->access_token, "app:/database", &error);
-	if (error){
-		perror(error);
-		error = NULL;
-	}
-
-	c_yandex_disk_mkdir(d->access_token, "app:/deleted", &error);
-	if (error){
-		perror(error);
-		error = NULL;
-	}	
-
-	c_yandex_disk_mkdir(d->access_token, "app:/data", &error);
-	if (error){
-		perror(error);
-		error = NULL;
-	}		
 
 	pthread_t tid; //thread id
 	pthread_attr_t attr; //thread attributives
