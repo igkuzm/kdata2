@@ -2,7 +2,7 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 14.03.2023
+ * Last Modified Date: 16.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -31,6 +31,12 @@ int callback(void *user_data, enum KDATA2_TYPE type, const char *column, void *d
 	return 0;
 }
 
+int messages(void *user_data, char *msg){
+	if (msg)
+		printf("MSG: %s\n", msg);
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	printf("kdata2 test start...\n");
@@ -45,26 +51,18 @@ int main(int argc, char *argv[])
 
 	kdata2_tab_t *tables[] = {&pers, NULL};
 
-	kdata2_t database = {
-		.filepath = "database.db",
-		.access_token = "01234567890",
-		.tables = tables,
-		.sec = 300,
-		.user_data = NULL,
-		.callback = NULL
-	};
-
 	printf("kdata2 init database...\t");
-	kdata2_init(&database);
+	kdata2_t *database;
+	kdata2_init(&database, "database.db", "01234567890", tables, 300, NULL, messages);
 	printf("OK\n");
 
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";
 	printf("kdata2 add text...\t");
-	kdata2_set_text_for_uuid(database.filepath, "pers", "name", "Igor V.", uuid);
+	kdata2_set_text_for_uuid(database, "pers", "name", "Igor V.", uuid);
 	printf("OK\n");
 	
 	printf("kdata2 add number...\t");
-	kdata2_set_number_for_uuid(database.filepath, "pers", "date", time(NULL), uuid);
+	kdata2_set_number_for_uuid(database, "pers", "date", time(NULL), uuid);
 	printf("OK\n");
 
 	printf("kdata2 add data...\t");
@@ -86,15 +84,18 @@ int main(int argc, char *argv[])
 	}	
 	fclose(fp);
 	
-	kdata2_set_data_for_uuid(database.filepath, "pers", "name", data, size, uuid);
+	kdata2_set_data_for_uuid(database, "pers", "photo", data, size, uuid);
 	printf("OK\n");
 
 	printf("GET DATA:\n");
-	kdata2_get(database.filepath, "pers", NULL, NULL, callback);
+	kdata2_get(database, "pers", NULL, NULL, callback);
+
 
 	printf("press any key...\n");
 	getchar();
 
+	kdata2_close(database);
+	
 	return 0;
 }
 
