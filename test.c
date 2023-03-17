@@ -2,12 +2,14 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 16.03.2023
+ * Last Modified Date: 17.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
 #include "kdata2.h"
 #include <stdio.h>
+
+#define TOKEN "y0_AgAAAABVlmyCAAfIlAAAAADPRKwbrJpNof9zQJaJDvp3mebK5NjrZWM"
 
 int callback(void *user_data, enum KDATA2_TYPE type, const char *column, void *data, size_t size){
 	switch (type) {
@@ -31,12 +33,6 @@ int callback(void *user_data, enum KDATA2_TYPE type, const char *column, void *d
 	return 0;
 }
 
-int messages(void *user_data, char *msg){
-	if (msg)
-		printf("MSG: %s\n", msg);
-	return 0;
-}
-
 int main(int argc, char *argv[])
 {
 	printf("kdata2 test start...\n");
@@ -53,7 +49,7 @@ int main(int argc, char *argv[])
 
 	printf("kdata2 init database...\t");
 	kdata2_t *database;
-	kdata2_init(&database, "database.db", "01234567890", tables, 300, NULL, messages);
+	kdata2_init(&database, "database.db", TOKEN, tables, 300);
 	printf("OK\n");
 
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";

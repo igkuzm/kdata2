@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 16.03.2023
+ * Last Modified Date: 17.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/_pthread/_pthread_t.h>
 #include <time.h>
 #include <unistd.h>  //for sleep
 #include <pthread.h>
@@ -27,9 +28,9 @@
 #include "cYandexDisk/cJSON.h"
 #include "cYandexDisk/uuid4/uuid4.h"
 
-#define DATABASE "kdata_database"
+#define DATABASE  "kdata_database"
+#define DELETED   "kdata_deleted"
 #define DATAFILES "kdata_data"
-#define DELETED "kdata_deleted"
 
 enum KDATA2_TYPE {
 	KDATA2_TYPE_NUMBER,        // SQLite INT 
@@ -71,9 +72,7 @@ typedef struct kdata2 {
 	char access_token[64];     // Yandex Disk access token
 	kdata2_tab_t ** tables;    // NULL-terminated array of tables
 	int sec;				   // number of seconds of delay to sinc data with Yandex Disk
-	void * user_data;          // data to transfer trough callback
-	int (*callback)(void * user_data, char * msg); // yandex disk daemon
-												   // callback	
+	pthread_t tid;             // Yandex Disk daemon thread id
 } kdata2_t;
 
 /* init function */
@@ -82,9 +81,7 @@ int kdata2_init(
 		const char * filepath,
 		const char * access_token,
 		kdata2_tab_t ** tables,
-		int sec,
-		void * user_data,
-		int (*callback)(void * user_data, char * msg)
+		int sec
 );
 
 int kdata2_set_access_token(kdata2_t * dataset, const char *access_token);
