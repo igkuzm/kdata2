@@ -13,20 +13,14 @@
 #ifndef KDATA2_H
 #define KDATA2_H
 
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/_pthread/_pthread_t.h>
-#include <time.h>
-#include <unistd.h>  //for sleep
-#include <pthread.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "SQLiteConnect/SQLiteConnect.h"
-#include "SQLiteConnect/sqlite3.h"
-#include "cYandexDisk/cYandexDisk.h"
-#include "cYandexDisk/cJSON.h"
-#include "cYandexDisk/uuid4/uuid4.h"
+#include <stdio.h>
+#include <time.h>
+#include <pthread.h>
+#include <sqlite3.h>
 
 #define DATABASE  "kdata_database"
 #define DELETED   "kdata_deleted"
@@ -35,7 +29,7 @@
 enum KDATA2_TYPE {
 	KDATA2_TYPE_NUMBER,        // SQLite INT 
 	KDATA2_TYPE_TEXT,		   // SQLite TEXT
-	KDATA2_TYPE_DATA		   // SQLite BLOB - to store data in base64 encode
+	KDATA2_TYPE_DATA		   // SQLite BLOB - to store binary data
 };
 
 /* this is data column */
@@ -64,8 +58,7 @@ static  kdata2_tab_t ** kdata2_table_add(
 		const char *name
 );
 
-
-/* this is dataset */
+/* this is kdata2 database */
 typedef struct kdata2 {
 	sqlite3 *db;               // sqlite3 database pointer
 	char filepath[BUFSIZ];     // file path to where store SQLite data 	
@@ -77,52 +70,52 @@ typedef struct kdata2 {
 
 /* init function */
 int kdata2_init(
-		kdata2_t ** dataset,
-		const char * filepath,
-		const char * access_token,
-		kdata2_tab_t ** tables,
-		int sec
+		kdata2_t     ** database,     // pointer to kdata2_t
+		const char    * filepath,     // file path to where store SQLite data
+		const char    * access_token, // Yandex Disk access token (may be NULL)
+		kdata2_tab_t ** tables,       // NULL-terminated array of tables
+		int sec                       // number of seconds of delay to sinc data with Yandex Disk
 );
-
-int kdata2_set_access_token(kdata2_t * dataset, const char *access_token);
+/* set access_token */
+int kdata2_set_access_token(kdata2_t * database, const char *access_token);
 
 /* close database and free memory */
 int kdata2_close(kdata2_t *dataset);
 
-/* set number for row with uuid; set uuid to NULL to create new */
+/* set number for data entity with uuid; set uuid to NULL to create new */
 int kdata2_set_number_for_uuid(
-		kdata2_t * dataset, 
+		kdata2_t * database, 
 		const char *tablename, 
 		const char *column, 
 		long number, 
 		const char *uuid);
 
-/* set text for row with uuid; set uuid to NULL to create new */
+/* set text for data entity with uuid; set uuid to NULL to create new */
 int kdata2_set_text_for_uuid(
-		kdata2_t * dataset, 
+		kdata2_t * database, 
 		const char *tablename, 
 		const char *column, 
 		const char *text, 
 		const char *uuid);
 
-/* set data for row with uuid; set uuid to NULL to create new */
+/* set data for data entity with uuid; set uuid to NULL to create new */
 int kdata2_set_data_for_uuid(
-		kdata2_t * dataset, 
+		kdata2_t * database, 
 		const char *tablename, 
 		const char *column, 
 		void *data, 
 		int len,
 		const char *uuid);
 
-/* remove row with uuid */
+/* remove data entity with uuid */
 int kdata2_remove_for_uuid(
-		kdata2_t * dataset, 
+		kdata2_t * database, 
 		const char *tablename, 
 		const char *uuid);
 
-/* get rows for table; set predicate to "WHERE uuid = 'uuid' to get row with uuid" */
+/* get entities for table; set predicate to "WHERE uuid = 'uuid'" to get with uuid */
 void kdata2_get(
-		kdata2_t * dataset, 
+		kdata2_t * database, 
 		const char *tablename, 
 		const char *predicate,
 		void *user_data,
@@ -134,5 +127,9 @@ void kdata2_get(
 			size_t size
 			)
 		);
+
+#ifdef __cplusplus
+}  /* end of the 'extern "C"' block */
+#endif
 
 #endif /* ifndef KDATA2_H */

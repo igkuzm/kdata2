@@ -8,8 +8,7 @@
 
 #include "kdata2.h"
 #include <stdio.h>
-
-#define TOKEN "y0_AgAAAABVlmyCAAfIlAAAAADPRKwbrJpNof9zQJaJDvp3mebK5NjrZWM"
+#include <stdlib.h>
 
 int callback(void *user_data, enum KDATA2_TYPE type, const char *column, void *data, size_t size){
 	switch (type) {
@@ -49,7 +48,7 @@ int main(int argc, char *argv[])
 
 	printf("kdata2 init database...\t");
 	kdata2_t *database;
-	kdata2_init(&database, "database.db", TOKEN, tables, 300);
+	kdata2_init(&database, "database.db", "", tables, 300);
 	printf("OK\n");
 
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";

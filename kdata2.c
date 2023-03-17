@@ -11,10 +11,14 @@
  */
 
 #include "kdata2.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+
+#include "cYandexDisk/cYandexDisk.h"
+#include "cYandexDisk/cJSON.h"
+#include "cYandexDisk/uuid4/uuid4.h"
 
 #ifndef logfile
 #define logfile stderr
@@ -699,10 +703,6 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * 
 		kdata2_tab_t *table = *tables++;
 	
 		/* remove data from SQLite database */
-		sqlite_connect_execute(
-				STR("DELETE FROM '%s' WHERE uuid = '%s'", table->name, file.name), 
-						d->filepath);
-
 		char *errmsg = NULL;
 		char *SQL = STR("DELETE FROM '%s' WHERE uuid = '%s'", table->name, file.name);
 		
@@ -942,9 +942,9 @@ int kdata2_init(
 		return -1;
 	}
 
-	/* if no token - exit function */
-	if (!access_token || access_token[0] == 0)
-		return -1;
+	/* if no token */
+	if (!access_token)
+		access_token = "";
 
 	strncpy(d->access_token, access_token, 63);
 	d->access_token[63] = 0;

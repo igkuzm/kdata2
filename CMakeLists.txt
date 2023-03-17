@@ -2,32 +2,45 @@ cmake_minimum_required(VERSION 3.15)
 
 set(TARGET kdata2)
 
-#To include kdata to your project use:
-#set(KDATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/path/to/kdata)
-#add_subdirectory(${KDATA_SOURCE_DIR})
+#To include kdata2 to your project use:
+#set(KDATA2_SOURCE_DIR ${CMAKE_SOURCE_DIR}/path/to/kdata)
+#add_subdirectory(${KDATA2_SOURCE_DIR})
 
-if (NOT DEFINED KDATA_SOURCE_DIR)
-  set(KDATA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+if (NOT DEFINED KDATA2_SOURCE_DIR)
+	SET(KDATA2_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 
 project(
 	${TARGET} VERSION 1.0 
-	DESCRIPTION "C library for SQLite database with cloud sync"
+	DESCRIPTION "C library for SQLite database with Yandex Disk sync"
 	HOMEPAGE_URL ""
 	LANGUAGES C 
 )
 
-set (CMAKE_C_STANDARD 11)
-
-set(CYANDEXDISK_SOURCE_DIR ${KDATA_SOURCE_DIR}/cYandexDisk)
+SET(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
 add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 
-add_subdirectory(${KDATA_SOURCE_DIR}/SQLiteConnect)
+if(WIN32)
+	SET(SQLITE_SRC sqlite3.c)
+	target_include_directories(${TARGET} ${KDATA2_SOURCE_DIR})
+else()
+	LIST(APPEND ADDLIBS sqlite3)
+endif()
 
 add_library(${TARGET} STATIC
 	kdata2.c
+	${SQLITE_SRC}
 )
-target_link_libraries(${TARGET} cYandexDisk SQLiteConnect)
+
+if(WIN32)
+elseif(APPLE)
+else()
+	if (NOT ANDROID)
+		LIST(APPEND ADDLIBS pthread dl)
+	endif()
+endif()
+
+target_link_libraries(${TARGET} cYandexDisk ${ADDLIBS})
 
 if(${KDATA_BUILD_TEST})
 	add_executable(${TARGET}_test test.c)
