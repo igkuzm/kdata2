@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 18.03.2023
+ * Last Modified Date: 19.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -815,6 +815,7 @@ int kdata2_init(
 		...
 		)
 {
+	ERR("Start kdata2_init...\n");	
 
 	/*
 	 * For init:
@@ -900,13 +901,17 @@ int kdata2_init(
 	d->tables = tables;
 
 	/* fill SQL string with data and update tables in memory*/
+	ERR("TABLES: \n");
 	struct kdata2_tab ** tab_ptr = d->tables; // pointer to iterate
 	while (*tab_ptr) {
+
 		/* create SQL string */
 		char SQL[BUFSIZ] = "";
 
 		/* for each table in dataset */
 		struct kdata2_tab *tab = *tab_ptr++;
+		
+		ERR("table %s\n", tab->tablename);
 
 		/* check if columns exists */
 		if (!tab->columns)
@@ -919,10 +924,12 @@ int kdata2_init(
 		/* add to SQL string */
 		sprintf(SQL, "CREATE TABLE IF NOT EXISTS '%s' ( ", tab->tablename);
 
+		ERR("COLUMNS: \n");
 		struct kdata2_col ** col_ptr = tab->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
 			struct kdata2_col *col = *col_ptr++;
+			ERR("column %s\n", col->columnname);
 
 			/* check if name exists */
 			if (col->columnname[0] == 0)
@@ -1343,54 +1350,6 @@ void kdata2_get(
 	sqlite3_finalize(stmt);
 }
 
-int kdata2_column_add(
-		struct kdata2_col ***columns, 
-		enum KDATA2_TYPE type, 
-		const char *name)
-{
-	/* create new columns array */
-	if (!*columns){
-		*columns = malloc(8);
-		if (!columns){
-			ERR("ERROR! kdata2_column_add: can't allocate memory for columns array\n");
-			return -1;
-		}
-	}
-
-	/* count columns */
-	struct kdata2_col **p = *columns; // pointer to iterate
-	int i = 0;
-	while (*p++)
-		i++;
-
-	/* allocate new column */
-	struct kdata2_col *new = NEW(struct kdata2_col);
-	if (!new){
-		ERR("ERROR! kdata2_column_add: can't allocate memory for column\n");
-		return -1;
-	}
-
-	/* set column attributes */
-	strncpy(new->columnname, name, 127);
-	new->columnname[127] = 0;
-	new->type = type;
-
-	/* realloc columns to get more space */
-	p = realloc(columns, i*8 + 2*8);
-	if (!p){
-		ERR("ERROR! kdata2_column_add: can't realloc memory for columns array\n");
-		return -1;
-	}
-
-	/* fill columns array */ 
-	p[i]   = new;
-	p[i+1] = NULL;
-	
-	*columns = p;
-
-	return 0;
-}
-
 int kdata2_close(kdata2_t *d){
 	if (!d)
 		return -1;
@@ -1420,7 +1379,6 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 }
 
 void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
-
 	// check table pointer
 	if (!t){
 		ERR("ERROR! kdata2_table_new: table pointer is NULL\n");
@@ -1435,12 +1393,16 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 	}
 	
 	// pointer to collumns
-	struct kdata2_col **columns = NULL;
+	struct kdata2_col **columns = malloc(8);
+	if (!columns){
+		ERR("ERROR! kdata2_table_new: can't allocate memory for columns array\n");
+		return;
+	}
 
 	/* set tables attributes */
 	strncpy(t[0]->tablename, tablename, 127);
 	t[0]->tablename[127] = 0;
-	t[0]->columns = columns;
+	t[0]->columns = NULL;
 	
 	//init va_args
 	va_list args;
@@ -1455,15 +1417,41 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 		return;
 
 	//iterate va_args
+	int i = 0;
 	while (type != KDATA2_TYPE_NULL && columnname != NULL){
+
+		/* allocate new column */
+		struct kdata2_col *new = NEW(struct kdata2_col);
+		if (!new){
+			ERR("ERROR! kdata2_table_new: can't allocate memory for column\n");
+			break;
+		}
+
+		/* set column attributes */
+		strncpy(new->columnname, columnname, 127);
+		new->columnname[127] = 0;
+		new->type = type;
+
+		/* add column to array */
+		columns[i++] = new;
 		
-		//new column
-		kdata2_column_add(&columns, type, columnname);
-		
+		//realloc columns array
+		void *p = realloc(columns, i * 8 + 8);
+		if (!p){
+			ERR("ERROR! kdata2_table_new: can't allocate memory for columns array\n");
+			break;
+		}		
+		columns = p;
+
+		/* iterate va_args */
 		type = va_arg(args, enum KDATA2_TYPE);
 		columnname = va_arg(args, char *);
 		if (!columnname) 
 			break;
 		
 	}
+	/* NULL-terminate array */
+	columns[i] = NULL;
+
+	t[0]->columns = columns;
 }
