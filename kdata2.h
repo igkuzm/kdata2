@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 17.03.2023
+ * Last Modified Date: 18.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -27,34 +27,34 @@ extern "C" {
 #define DATAFILES "kdata_data"
 
 enum KDATA2_TYPE {
+	KDATA2_TYPE_NULL,         
 	KDATA2_TYPE_NUMBER,        // SQLite INT 
 	KDATA2_TYPE_TEXT,		   // SQLite TEXT
 	KDATA2_TYPE_DATA		   // SQLite BLOB - to store binary data
 };
 
 /* this is data column */
-typedef struct kdata2_col {
+struct kdata2_col {
 	enum KDATA2_TYPE type;     // data type
-	char name[128];            // name of column
-} kdata2_col_t;
-
-/* add column to columns array - set columns to NULL to create new array */
-static  kdata2_col_t ** kdata2_column_add(
-		kdata2_col_t **columns, 
-		enum KDATA2_TYPE type, 
-		const char *name
-);
+	char columnname[128];      // name of column
+};
+typedef struct kdata2_col * kdata2_column;
 
 /* this is data table */
-typedef struct kdata2_tab {
-	char name[128];            // name of table
-	kdata2_col_t ** columns;   // NULL-terminated array of columns
-} kdata2_tab_t;
+struct kdata2_tab {
+	char tablename[128];       // name of table
+	kdata2_column * columns;   // NULL-terminated array of columns
+};
+typedef struct kdata2_tab * kdata2_table;
+
+/*to create table structure with columns; va_args: type, columnname, ... NULL */
+void kdata2_table_new(kdata2_table *t, const char * tablename, ...); 
+
 
 /* add table to tables array - set tables to NULL to create new array */
-static  kdata2_tab_t ** kdata2_table_add(
-		kdata2_tab_t **tables, 
-		kdata2_col_t **columns, 
+static  kdata2_table * kdata2_table_add(
+		kdata2_table * tables, 
+		kdata2_column* columns, 
 		const char *name
 );
 
@@ -63,7 +63,7 @@ typedef struct kdata2 {
 	sqlite3 *db;               // sqlite3 database pointer
 	char filepath[BUFSIZ];     // file path to where store SQLite data 	
 	char access_token[64];     // Yandex Disk access token
-	kdata2_tab_t ** tables;    // NULL-terminated array of tables
+	kdata2_table * tables;     // NULL-terminated array of tables
 	int sec;				   // number of seconds of delay to sinc data with Yandex Disk
 	pthread_t tid;             // Yandex Disk daemon thread id
 } kdata2_t;
@@ -73,7 +73,7 @@ int kdata2_init(
 		kdata2_t     ** database,     // pointer to kdata2_t
 		const char    * filepath,     // file path to where store SQLite data
 		const char    * access_token, // Yandex Disk access token (may be NULL)
-		kdata2_tab_t ** tables,       // NULL-terminated array of tables
+		kdata2_table  * tables,       // NULL-terminated array of tables
 		int sec                       // number of seconds of delay to sinc data with Yandex Disk
 );
 /* set access_token */

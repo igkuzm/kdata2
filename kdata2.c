@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 17.03.2023
+ * Last Modified Date: 18.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -642,14 +642,14 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 	bool data_exists = false; 
 
 	/* for each table in database */
-	kdata2_tab_t **tables = d->tables;
+	struct kdata2_tab **tables = d->tables;
 	while (*tables) {
-		kdata2_tab_t *table = *tables++;
+		struct kdata2_tab *table = *tables++;
 	
 		sqlite3_stmt *stmt;
 		
 		char *SQL = STR("SELECT timestamp FROM '%s' WHERE uuid = '%s'", 
-							table->name, file.name);
+							table->tablename, file.name);
 		
 		int res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 		if (res != SQLITE_OK) {
@@ -698,13 +698,13 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * 
 	}	
 
 	/* for each table in database */
-	kdata2_tab_t **tables = d->tables;
+	struct kdata2_tab **tables = d->tables;
 	while (*tables) {
-		kdata2_tab_t *table = *tables++;
+		struct kdata2_tab *table = *tables++;
 	
 		/* remove data from SQLite database */
 		char *errmsg = NULL;
-		char *SQL = STR("DELETE FROM '%s' WHERE uuid = '%s'", table->name, file.name);
+		char *SQL = STR("DELETE FROM '%s' WHERE uuid = '%s'", table->tablename, file.name);
 		
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
@@ -804,7 +804,7 @@ int kdata2_init(
 		kdata2_t ** database,
 		const char * filepath,
 		const char * access_token,
-		kdata2_tab_t ** tables,
+		struct kdata2_tab ** tables,
 		int sec
 		)
 {
@@ -862,42 +862,42 @@ int kdata2_init(
 	d->tables = tables;
 
 	/* fill SQL string with data and update tables in memory*/
-	kdata2_tab_t ** tab_ptr = d->tables; // pointer to iterate
+	struct kdata2_tab ** tab_ptr = d->tables; // pointer to iterate
 	while (*tab_ptr) {
 		/* create SQL string */
 		char SQL[BUFSIZ] = "";
 
 		/* for each table in dataset */
-		kdata2_tab_t *tab = *tab_ptr++;
+		struct kdata2_tab *tab = *tab_ptr++;
 
 		/* check if columns exists */
 		if (!tab->columns)
 			continue;
 
 		/* check if name exists */
-		if (tab->name[0] == 0)
+		if (tab->tablename[0] == 0)
 			continue;
 
 		/* add to SQL string */
-		sprintf(SQL, "CREATE TABLE IF NOT EXISTS '%s' ( ", tab->name);
+		sprintf(SQL, "CREATE TABLE IF NOT EXISTS '%s' ( ", tab->tablename);
 
-		kdata2_col_t ** col_ptr = tab->columns; // pointer to iterate
+		struct kdata2_col ** col_ptr = tab->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
-			kdata2_col_t *col = *col_ptr++;
+			struct kdata2_col *col = *col_ptr++;
 
 			/* check if name exists */
-			if (col->name[0] == 0)
+			if (col->columnname[0] == 0)
 				continue;
 
 			/* each table should have uuid column and timestamp column */
 			/* check if column name is uuid or timestamp */
-			if (strcmp(col->name, "uuid") == 0 
-					|| strcmp(col->name, "timestamp") == 0)
+			if (strcmp(col->columnname, "uuid") == 0 
+					|| strcmp(col->columnname, "timestamp") == 0)
 				continue;
 
 			/* append SQL string */
-			strcat(SQL, col->name);
+			strcat(SQL, col->columnname);
 			strcat(SQL, " ");
 			switch (col->type) {
 				case KDATA2_TYPE_NUMBER:
@@ -1291,7 +1291,7 @@ void kdata2_get(
 }
 
 struct  kdata2_col ** kdata2_column_add(
-		kdata2_col_t **columns, 
+		struct kdata2_col **columns, 
 		enum KDATA2_TYPE type, 
 		const char *name)
 {
@@ -1305,21 +1305,21 @@ struct  kdata2_col ** kdata2_column_add(
 	}
 
 	/* count columns */
-	kdata2_col_t **p = columns; // pointer to iterate
+	struct kdata2_col **p = columns; // pointer to iterate
 	int i = 0;
 	while (*p++)
 		i++;
 
 	/* allocate new column */
-	kdata2_col_t *new = NEW(kdata2_col_t);
+	struct kdata2_col *new = NEW(struct kdata2_col);
 	if (!new){
 		ERR("ERROR! kdata2_column_add: can't allocate memory for column\n");
 		return NULL;
 	}
 
 	/* set column attributes */
-	strncpy(new->name, name, 127);
-	new->name[127] = 0;
+	strncpy(new->columnname, name, 127);
+	new->columnname[127] = 0;
 	new->type = type;
 
 	/* realloc columns to get more space */
@@ -1338,9 +1338,9 @@ struct  kdata2_col ** kdata2_column_add(
 }
 
 struct  kdata2_tab ** kdata2_table_add(
-		kdata2_tab_t **tables, 
-		kdata2_col_t **columns, 
-		const char *name)
+		struct kdata2_tab **tables, 
+		struct kdata2_col **columns, 
+		const char *tablename)
 {
 	/* create new tables array */
 	if (!tables){
@@ -1352,21 +1352,21 @@ struct  kdata2_tab ** kdata2_table_add(
 	}
 
 	/* count tables */
-	kdata2_tab_t **p = tables; // pointer to iterate
+	struct kdata2_tab **p = tables; // pointer to iterate
 	int i = 0;
 	while (*p++)
 		i++;
 
 	/* allocate new table */
-	kdata2_tab_t *new = NEW(kdata2_tab_t);
+	struct kdata2_tab *new = NEW(struct kdata2_tab);
 	if (!new){
 		ERR("ERROR! kdata2_table_add: can't allocate memory for table\n");
 		return NULL;
 	}
 
 	/* set tables attributes */
-	strncpy(new->name, name, 127);
-	new->name[127] = 0;
+	strncpy(new->tablename, tablename, 127);
+	new->tablename[127] = 0;
 	new->columns = columns;
 
 	/* realloc tables to get more space */
@@ -1410,4 +1410,38 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 	d->access_token[63] = 0;
 	
 	return 0;
+}
+
+void kdata2_table_init(kdata2_table *t, const char * tablename, ...){
+	int count = 0;
+
+	// pointer to collumns
+	struct kdata2_col **columns = NULL;
+	
+	//init va_args
+	va_list args;
+	va_start(args, tablename);
+
+	enum KDATA2_TYPE type = va_arg(args, enum KDATA2_TYPE);
+	if (type == KDATA2_TYPE_NULL)
+		return;
+
+	char * columnname = va_arg(args, char *);
+	if (!columnname)
+		return;
+
+	//iterate va_args
+	while (type != KDATA2_TYPE_NULL && columnname != NULL){
+		
+		//new column
+		kdata2_column_add(columns, type, columnname);
+		
+		type = va_arg(args, enum KDATA2_TYPE);
+		columnname = va_arg(args, char *);
+		if (!columnname) 
+			break;
+		
+	}
+
+	kdata2_table_add(t, columns, tablename);
 }
