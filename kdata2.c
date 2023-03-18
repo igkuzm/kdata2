@@ -24,9 +24,12 @@
 #define logfile stderr
 #endif /* ifndef logfile */
 
-#ifndef ERR
-#define ERR(...) ({fprintf(logfile, __VA_ARGS__);})
-#endif /* ifndef ERR */
+#ifdef __ANDROID__
+	#include <android/log.h>
+	#define ERR(...) __android_log_print(ANDROID_LOG_ERROR, "kdata2", __VA_ARGS__) 
+#else
+	#define ERR(...) ({fprintf(logfile, __VA_ARGS__);})
+#endif
 
 #define NEW(T)   ({T *new = malloc(sizeof(T)); new;})
 #define STR(...) ({char str[BUFSIZ]; sprintf(str, __VA_ARGS__); str;})
