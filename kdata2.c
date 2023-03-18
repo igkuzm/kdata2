@@ -932,12 +932,12 @@ int kdata2_init(
 		}
 		
 		/* add columns */
-		sprintf(SQL, "ALTER TABLE %s ADD COLUMN uuid TEXT;", tab->tablename);
+		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN uuid TEXT;", tab->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
 			ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
 
-		sprintf(SQL, "ALTER TABLE %s ADD COLUMN timestamp INT;", tab->tablename);
+		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", tab->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
 			ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
