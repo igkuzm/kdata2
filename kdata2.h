@@ -50,14 +50,6 @@ typedef struct kdata2_tab * kdata2_table;
 /*to create table structure with columns; va_args: type, columnname, ... NULL */
 void kdata2_table_new(kdata2_table *t, const char * tablename, ...); 
 
-
-/* add table to tables array - set tables to NULL to create new array */
-static  kdata2_table * kdata2_table_add(
-		kdata2_table * tables, 
-		kdata2_column* columns, 
-		const char *name
-);
-
 /* this is kdata2 database */
 typedef struct kdata2 {
 	sqlite3 *db;               // sqlite3 database pointer
@@ -73,8 +65,8 @@ int kdata2_init(
 		kdata2_t     ** database,     // pointer to kdata2_t
 		const char    * filepath,     // file path to where store SQLite data
 		const char    * access_token, // Yandex Disk access token (may be NULL)
-		kdata2_table  * tables,       // NULL-terminated array of tables
-		int sec                       // number of seconds of delay to sinc data with Yandex Disk
+		int sec,                      // number of seconds of delay to sinc data with Yandex Disk
+		...							  // kdata2_table, NULL
 );
 /* set access_token */
 int kdata2_set_access_token(kdata2_t * database, const char *access_token);

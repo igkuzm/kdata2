@@ -811,8 +811,8 @@ int kdata2_init(
 		kdata2_t ** database,
 		const char * filepath,
 		const char * access_token,
-		struct kdata2_tab ** tables,
-		int sec
+		int sec,
+		...
 		)
 {
 
@@ -861,11 +861,42 @@ int kdata2_init(
 		return err;
 	} 
 
-	/* check tables */
+	/* allocate and fill tables array */
+	kdata2_table *tables = malloc(8);
 	if (!tables){
-		ERR("ERROR! kdata2_init: tables array is NULL\n");	
+		ERR("ERROR! kdata2_init: can't allocate kdata2_t_table\n");	
 		return -1;
-	}
+	}	
+	int tcount = 0;
+
+	//init va_args
+	va_list args;
+	va_start(args, sec);
+
+	kdata2_table table = va_arg(args, kdata2_table);
+	if (!table)
+		return -1;
+
+	//iterate va_args
+	while (table){
+		// add table to tables
+		tables[tcount++] = table;
+		
+		// realloc tables
+		void *p = realloc(tables, tcount * 8 + 8);
+		if (!p) {
+			ERR("ERROR! kdata2_init: can't realloc tables\n");	
+			break;
+		}
+		tables = p;
+
+		// iterate
+		table = va_arg(args, kdata2_table);
+	}	
+	/* NULL-terminate tables array */
+	tables[tcount] = NULL;
+
+	/* set tables */
 	d->tables = tables;
 
 	/* fill SQL string with data and update tables in memory*/
@@ -1312,22 +1343,22 @@ void kdata2_get(
 	sqlite3_finalize(stmt);
 }
 
-struct  kdata2_col ** kdata2_column_add(
-		struct kdata2_col **columns, 
+int kdata2_column_add(
+		struct kdata2_col ***columns, 
 		enum KDATA2_TYPE type, 
 		const char *name)
 {
 	/* create new columns array */
-	if (!columns){
-		columns = malloc(8);
+	if (!*columns){
+		*columns = malloc(8);
 		if (!columns){
 			ERR("ERROR! kdata2_column_add: can't allocate memory for columns array\n");
-			return NULL;
+			return -1;
 		}
 	}
 
 	/* count columns */
-	struct kdata2_col **p = columns; // pointer to iterate
+	struct kdata2_col **p = *columns; // pointer to iterate
 	int i = 0;
 	while (*p++)
 		i++;
@@ -1336,7 +1367,7 @@ struct  kdata2_col ** kdata2_column_add(
 	struct kdata2_col *new = NEW(struct kdata2_col);
 	if (!new){
 		ERR("ERROR! kdata2_column_add: can't allocate memory for column\n");
-		return NULL;
+		return -1;
 	}
 
 	/* set column attributes */
@@ -1348,62 +1379,16 @@ struct  kdata2_col ** kdata2_column_add(
 	p = realloc(columns, i*8 + 2*8);
 	if (!p){
 		ERR("ERROR! kdata2_column_add: can't realloc memory for columns array\n");
-		return NULL;
+		return -1;
 	}
-	columns = p;
 
 	/* fill columns array */ 
-	columns[i]   = new;
-	columns[i+1] = NULL;
+	p[i]   = new;
+	p[i+1] = NULL;
+	
+	*columns = p;
 
-	return columns;
-}
-
-struct  kdata2_tab ** kdata2_table_add(
-		struct kdata2_tab **tables, 
-		struct kdata2_col **columns, 
-		const char *tablename)
-{
-	/* create new tables array */
-	if (!tables){
-		tables = malloc(8);
-		if (!tables){
-			ERR("ERROR! kdata2_table_add: can't allocate memory for tables array\n");
-			return NULL;
-		}
-	}
-
-	/* count tables */
-	struct kdata2_tab **p = tables; // pointer to iterate
-	int i = 0;
-	while (*p++)
-		i++;
-
-	/* allocate new table */
-	struct kdata2_tab *new = NEW(struct kdata2_tab);
-	if (!new){
-		ERR("ERROR! kdata2_table_add: can't allocate memory for table\n");
-		return NULL;
-	}
-
-	/* set tables attributes */
-	strncpy(new->tablename, tablename, 127);
-	new->tablename[127] = 0;
-	new->columns = columns;
-
-	/* realloc tables to get more space */
-	p = realloc(tables, i*8 + 2*8);
-	if (!p){
-		ERR("ERROR! kdata2_table_add: can't realloc memory for tables array\n");
-		return NULL;
-	}
-	tables = p;
-
-	/* fill columns array */ 
-	tables[i]   = new;
-	tables[i+1] = NULL;
-
-	return tables;	
+	return 0;
 }
 
 int kdata2_close(kdata2_t *d){
@@ -1436,20 +1421,26 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 
 void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 
-	// pointer to collumns
-	struct kdata2_col **columns = NULL;
+	// check table pointer
+	if (!t){
+		ERR("ERROR! kdata2_table_new: table pointer is NULL\n");
+		return;
+	}
 	
 	/* allocate new table */
-	struct kdata2_tab *new = NEW(struct kdata2_tab);
-	if (!new){
+	*t = NEW(struct kdata2_tab);
+	if (!*t){
 		ERR("ERROR! kdata2_table_new: can't allocate memory for table\n");
 		return;
 	}
+	
+	// pointer to collumns
+	struct kdata2_col **columns = NULL;
 
 	/* set tables attributes */
-	strncpy(new->tablename, tablename, 127);
-	new->tablename[127] = 0;
-	new->columns = columns;
+	strncpy(t[0]->tablename, tablename, 127);
+	t[0]->tablename[127] = 0;
+	t[0]->columns = columns;
 	
 	//init va_args
 	va_list args;
@@ -1467,7 +1458,7 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 	while (type != KDATA2_TYPE_NULL && columnname != NULL){
 		
 		//new column
-		kdata2_column_add(columns, type, columnname);
+		kdata2_column_add(&columns, type, columnname);
 		
 		type = va_arg(args, enum KDATA2_TYPE);
 		columnname = va_arg(args, char *);
