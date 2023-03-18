@@ -935,6 +935,8 @@ int kdata2_init(
 		sprintf(SQL, "ALTER TABLE %s ADD COLUMN uuid TEXT; "
 				"ALTER TABLE %s ADD COLUMN timestamp INT", tab->tablename, tab->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
+		if (errmsg)
+			ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
 	}
 
 	/* create table to store updates */
