@@ -914,10 +914,12 @@ int kdata2_init(
 			}
 
 			/* append ',' */
-			strcat(SQL, ", ");
+			if (*col_ptr)
+				strcat(SQL, ", ");
 		}
 		/* add uuid column */
-		strcat(SQL, "uuid TEXT, timestamp INT)");
+		//strcat(SQL, "uuid TEXT, timestamp INT)");
+		strcat(SQL, ")");
 		
 		/* run SQL command */
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
@@ -925,6 +927,11 @@ int kdata2_init(
 			ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
 			return -1;
 		}
+		
+		/* add columns */
+		sprintf(SQL, "ALTER TABLE %s ADD COLUMN uuid TEXT; "
+				"ALTER TABLE %s ADD COLUMN timestamp INT", tab->tablename, tab->tablename);
+		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	}
 
 	/* create table to store updates */
