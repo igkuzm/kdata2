@@ -25,6 +25,10 @@ if(WIN32)
 	target_include_directories(${TARGET} ${KDATA2_SOURCE_DIR})
 else()
 	LIST(APPEND ADDLIBS sqlite3)
+	if (ANDROID)
+		SET(SQLITE_SRC sqlite3.c)
+		target_include_directories(${TARGET} ${KDATA2_SOURCE_DIR})
+	endif()
 endif()
 
 add_library(${TARGET} STATIC
