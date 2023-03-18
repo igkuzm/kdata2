@@ -24,11 +24,14 @@
 #define logfile stderr
 #endif /* ifndef logfile */
 
+#ifndef ERR
+#define ERR(...) ({fprintf(logfile, __VA_ARGS__);})
+#endif /* ifndef ERR */
+
 #define NEW(T)   ({T *new = malloc(sizeof(T)); new;})
 #define STR(...) ({char str[BUFSIZ]; sprintf(str, __VA_ARGS__); str;})
-#define ERR(...) ({fprintf(logfile, __VA_ARGS__);})
 
-void _uuid_new(char *uuid){
+static void _uuid_new(char *uuid){
 	//create uuid
 	UUID4_STATE_T state; UUID4_T identifier;
 	uuid4_seed(&state);
