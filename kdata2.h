@@ -128,7 +128,6 @@ void kdata2_get(
 			)
 		);
 
-void _uuid_new(char *uuid);
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */
 #endif
