@@ -20,13 +20,10 @@ project(
 SET(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
 add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 
-if(WIN32)
+if(WIN32 OR ANDROID)
 	SET(SQLITE_SRC sqlite3.c)
 else()
 	LIST(APPEND ADDLIBS sqlite3)
-	if (ANDROID)
-		SET(SQLITE_SRC sqlite3.c)
-	endif()
 endif()
 
 add_library(${TARGET} STATIC
