@@ -1412,11 +1412,22 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 	return 0;
 }
 
-void kdata2_table_init(kdata2_table *t, const char * tablename, ...){
-	int count = 0;
+void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 
 	// pointer to collumns
 	struct kdata2_col **columns = NULL;
+	
+	/* allocate new table */
+	struct kdata2_tab *new = NEW(struct kdata2_tab);
+	if (!new){
+		ERR("ERROR! kdata2_table_new: can't allocate memory for table\n");
+		return;
+	}
+
+	/* set tables attributes */
+	strncpy(new->tablename, tablename, 127);
+	new->tablename[127] = 0;
+	new->columns = columns;
 	
 	//init va_args
 	va_list args;
@@ -1442,6 +1453,4 @@ void kdata2_table_init(kdata2_table *t, const char * tablename, ...){
 			break;
 		
 	}
-
-	kdata2_table_add(t, columns, tablename);
 }
