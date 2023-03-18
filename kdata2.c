@@ -28,13 +28,14 @@
 #define STR(...) ({char str[BUFSIZ]; sprintf(str, __VA_ARGS__); str;})
 #define ERR(...) ({fprintf(logfile, __VA_ARGS__);})
 
-static void _uuid_new(char *uuid){
+void _uuid_new(char *uuid){
 	//create uuid
 	UUID4_STATE_T state; UUID4_T identifier;
 	uuid4_seed(&state);
 	uuid4_gen(&state, &identifier);
 	if (!uuid4_to_s(identifier, uuid, 37)){
 		perror("can't generate UUID\n");
+		ERR("ERROR! can't generate UUID\n");
 		return;
 	}
 }
@@ -906,6 +907,7 @@ int kdata2_init(
 					strcat(SQL, "TEXT"); break;
 				case KDATA2_TYPE_DATA:
 					strcat(SQL, "BLOB"); break;
+				default: continue;
 			}
 
 			/* append ',' */
