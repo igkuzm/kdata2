@@ -2,7 +2,7 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 17.03.2023
+ * Last Modified Date: 18.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -36,15 +36,15 @@ int main(int argc, char *argv[])
 {
 	printf("kdata2 test start...\n");
 	
-	kdata2_col_t name      = {KDATA2_TYPE_TEXT,   "name" };
-	kdata2_col_t date      = {KDATA2_TYPE_NUMBER, "date" };
-	kdata2_col_t photo     = {KDATA2_TYPE_DATA,   "photo"};
+	struct kdata2_col name      = {KDATA2_TYPE_TEXT,   "name" };
+	struct kdata2_col date      = {KDATA2_TYPE_NUMBER, "date" };
+	struct kdata2_col photo     = {KDATA2_TYPE_DATA,   "photo"};
 
-	kdata2_col_t *cols[]   = {&name, &date, &photo, NULL };
+	struct kdata2_col_t *cols[]   = {&name, &date, &photo, NULL };
 
-	kdata2_tab_t pers      = {"pers", cols};
+	struct kdata2_tab pers      = {"pers", cols};
 
-	kdata2_tab_t *tables[] = {&pers, NULL};
+	struct kdata2_tab *tables[] = {&pers, NULL};
 
 	printf("kdata2 init database...\t");
 	kdata2_t *database;
