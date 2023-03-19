@@ -18,23 +18,11 @@
 
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
-#include "cYandexDisk/uuid4/uuid4.h"
+#include "cYandexDisk/uuid.h"
 
 #include "log.h"
 
 #define NEW(T)   ({T *new = malloc(sizeof(T)); new;})
-
-static void _uuid_new(char *uuid){
-	//create uuid
-	UUID4_STATE_T state; UUID4_T identifier;
-	uuid4_seed(&state);
-	uuid4_gen(&state, &identifier);
-	if (!uuid4_to_s(identifier, uuid, 37)){
-		perror("can't generate UUID\n");
-		ERR("%s", "ERROR! can't generate UUID\n");
-		return;
-	}
-}
 
 static void _kdata_free_data(kdata2_t * d){
 	if (!d->tables)
@@ -58,12 +46,12 @@ static int
 _remove_local_update(void *user_data, char *error){
 	struct kdata2_update *update = user_data;
 	if (!update){
-		ERR("%s", "ERROR! _remove_local_update: data is NULL\n");
+		ERR("%s", "data is NULL");
 		return -1;
 	}
 	
 	if (error){
-		ERR("ERROR! _remove_local_update: %s\n", error);
+		ERR("%s", error);
 		return -1;
 	}
 
@@ -74,7 +62,7 @@ _remove_local_update(void *user_data, char *error){
 	SQL = STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", update->uuid); 
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! _remove_local_update: sqlite3_exec: %s\n", errmsg);	
+		ERR("sqlite3_exec: %s", errmsg);	
 		return -1;
 	}	
 
@@ -83,7 +71,7 @@ _remove_local_update(void *user_data, char *error){
 					update->table, update->timestamp, update->uuid); 
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! _remove_local_update: sqlite3_exec: %s\n", errmsg);	
+		ERR("sqlite3_exec: %s", errmsg);	
 		return -1;
 	}		
 
@@ -97,12 +85,12 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	struct kdata2_update *update = user_data;
 
 	if (!update){
-		ERR("%s","ERROR! _after_upload_to_YandexDisk: data is NULL\n");
+		ERR("%s","data is NULL");
 		return -1;
 	}	
 
 	if (error)
-		ERR("ERROR! _after_upload_to_YandexDisk: %s: %s\n", update->uuid, error);
+		ERR("%s: %s\n", update->uuid, error);
 	
 	/* free data */
 	if (update->data_to_free)
@@ -116,10 +104,10 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 			STR("app:/%s/%s", DATABASE, update->uuid), &file, &errmsg);
 
 	if(errmsg)
-		ERR("ERROR! _after_upload_to_YandexDisk: %s\n", errmsg);
+		ERR("%s\n", errmsg);
 
 	if (!file.name[0]) {
-		ERR("%s", "ERROR! _after_upload_to_YandexDisk: can't get file in _after_upload_to_YandexDisk\n");
+		ERR("%s", "can't get file");
 		return -1;
 	}
 
@@ -142,25 +130,25 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	 */
 
 	if (!update){
-		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: data is NULL\n");
+		ERR("%s", "data is NULL");
 		return;
 	}	
 
 	if (!update->d){
-		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: update->data is NULL\n");
+		ERR("%s", "update->data is NULL");
 		return;
 	}	
 
 	/* create json */
 	cJSON *json = cJSON_CreateObject();
 	if (!json){
-		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: can't cJSON_CreateObject\n");
+		ERR("%s", "can't cJSON_CreateObject");
 		return;
 	}
 	cJSON_AddItemToObject(json, "tablename", cJSON_CreateString(update->table));
 	cJSON *columns = cJSON_CreateArray();
 	if (!columns){
-		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: can't cJSON_CreateArray\n");
+		ERR("can't cJSON_CreateArray for table: %s", update->table);
 		return;
 	}	
 
@@ -170,8 +158,8 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	char *SQL = STR("SELECT * FROM '%s' WHERE uuid = '%s'", update->table, update->uuid);
 	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("ERROR! kdata2_get: sqlite3_prepare_v2 error %s,"
-				" for SQL request: %s\n", sqlite3_errmsg(update->d->db), SQL);
+		ERR("sqlite3_prepare_v2 error %s,"
+				" for SQL request: %s", sqlite3_errmsg(update->d->db), SQL);
 		return;
 	}	
 
@@ -209,7 +197,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 			/* fill json with data */
 			cJSON *column = cJSON_CreateObject();
 			if (!column){
-				ERR("%s", "ERROR! _fill_json_with_SQLite_data: cant cJSON_CreateObject\n");
+				ERR("%s", "can't cJSON_CreateObject");
 				continue;
 			}
 			cJSON_AddItemToObject(column, "name", cJSON_CreateString(title));
@@ -229,8 +217,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 				/* buffer overload safe get data */
 				void *buf = malloc(len);
 				if (!buf){
-					ERR("ERROR! _fill_json_with_SQLite_data:"
-							" can't allocate memory for buffer size: %ld\n", len);
+					ERR("can't allocate memory for buffer size: %ld\n", len);
 					break;
 				}
 				memcpy(buf, value, len);
@@ -1014,7 +1001,7 @@ int kdata2_set_number_for_uuid(
 {
 	if (!uuid){
 		char _uuid[37];
-		_uuid_new(_uuid);
+		uuid_new(_uuid);
 		uuid = _uuid;
 	}
 
@@ -1070,7 +1057,7 @@ int kdata2_set_text_for_uuid(
 {
 	if (!uuid){
 		char _uuid[37];
-		_uuid_new(_uuid);
+		uuid_new(_uuid);
 		uuid = _uuid;
 	}
 
@@ -1127,7 +1114,7 @@ int kdata2_set_data_for_uuid(
 {
 	if (!uuid){
 		char _uuid[37];
-		_uuid_new(_uuid);
+		uuid_new(_uuid);
 		uuid = _uuid;
 	}
 
