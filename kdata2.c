@@ -217,7 +217,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 				/* buffer overload safe get data */
 				void *buf = malloc(len);
 				if (!buf){
-					ERR("can't allocate memory for buffer size: %ld\n", len);
+					ERR("can't allocate memory for buffer size: %ld", len);
 					break;
 				}
 				memcpy(buf, value, len);
@@ -225,8 +225,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 				/* allocate new struct update for thread */
 				struct kdata2_update *new_update = NEW(struct kdata2_update);
 				if (!new_update){
-					ERR("%s", "ERROR! _fill_json_with_SQLite_data:"
-							" can't allocate memory for struct kdata2_update\n");
+					ERR("%s", "can't allocate memory for struct kdata2_update");
 					break;
 				}
 
@@ -253,8 +252,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 					/* buffer overload safe get data */
 					char *buf = malloc(len + 1);
 					if (!buf){
-						ERR("ERROR! _fill_json_with_SQLite_data:"
-								" can't allocate memory for buffer size: %ld\n", len + 1);
+						ERR("can't allocate memory for buffer size: %ld", len + 1);
 						break;
 					}
 					strncpy(buf, (const char *)value, len);
@@ -296,15 +294,14 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 	kdata2_t *d = user_data;
 
 	if (!d){
-		ERR("%s", "ERROR! _for_each_update_in_SQLite: data is NULL\n");
+		ERR("%s", "data is NULL");
 		return 0; // return 0 - do not interrupt SQL
 	}	
 
 	/* new kdata_update */
 	struct kdata2_update *update = NEW(struct kdata2_update);
 	if (!update){
-			ERR("%s", "ERROR! _for_each_update_in_SQLite:"
-				" can't allocate memory for struct kdata2_update\n");
+			ERR("%s", "can't allocate memory for struct kdata2_update");
 		return 0; // return 0 - do not interrupt SQL
 	}
 
@@ -349,7 +346,7 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 
 	if (errmsg){
 		if (strcmp(errmsg, "UnauthorizedError") == 0){
-			ERR("%s", "ERROR! _for_each_update_in_SQLite: Unauthorized to Yandex Disk\n");
+			ERR("%s", "Unauthorized to Yandex Disk");
 			
 			free(update);
 			return 0;
@@ -375,13 +372,13 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 				_upload_local_data_to_Yandex_Disk(update);
 				return 0;
 			} else {
-				ERR("ERROR! _for_each_update_in_SQLite: %s\n", errmsg);
+				ERR("%s", errmsg);
 				
 				free(update);
 				return -1;
 			}
 		}
-		ERR("%s", "ERROR! _for_each_update_in_SQLite: unknown error\n");
+		ERR("%s", "unknown error");
 			
 		free(update);
 		return -1;
@@ -394,25 +391,24 @@ static int
 _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, char *error){
 	/* handle error */
 	if (error)
-		ERR("ERROR! _download_data_from_YandexDisk_to_local_database_cb: %s\n", error);
+		ERR("%s", error);
 
 	struct kdata2_update *update = user_data;	
 
 	if (!update){
-		ERR("%s", "ERROR! _download_data_from_YandexDisk_to_local_database_cb: data is NULL\n");
+		ERR("%s", "data is NULL");
 		return -1;
 	}	
 
 	if (!update->d){
-		ERR("%s", "ERROR! _download_data_from_YandexDisk_to_local_database_cb: update->data is NULL\n");
+		ERR("%s", "update->data is NULL");
 		return -1;
 	}	
 
 	/* allocate SQL string */
 	char *SQL = malloc(size + BUFSIZ);
 	if (!SQL){
-		ERR("ERROR! _download_data_from_YandexDisk_to_local_database_cb:"
-				" can't allocate memory for SQL string size: %ld\n", size + BUFSIZ);
+		ERR("can't allocate memory for SQL string size: %ld", size + BUFSIZ);
 		return -1;
 	}
 
@@ -426,8 +422,7 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	char *errmsg = NULL;
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! _download_data_from_YandexDisk_to_local_database_cb:"
-				" sqlite3_exec: %s: %s\n", SQL, errmsg);
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);
 	}
 
 	/* free SQL string */
@@ -440,24 +435,24 @@ static int
 _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, char *error){
 	/* handle error */
 	if (error)
-		ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb: %s\n", error);
+		ERR("%s", error);
 
 	struct kdata2_update *update = user_data;
 
 	if (!update){
-		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb: data is NULL\n");
+		ERR("%s", "data is NULL");
 		return -1;
 	}	
 
 	if (!update->d){
-		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb: update->data is NULL\n");
+		ERR("%s", "update->data is NULL");
 		return -1;
 	}	
 
 	/* data is json file */
 	cJSON *json = cJSON_ParseWithLength(data, size);
 	if (!json){
-		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb: can't parse json file\n");
+		ERR("%s", "can't parse json file");
 		free(update);
 		return 1;
 	}
@@ -465,8 +460,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	/* get tablename */
 	cJSON *tablename = cJSON_GetObjectItem(json, "tablename");
 	if (!tablename){
-		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-				" can't get tablename from json file\n");
+		ERR("%s", "can't get tablename from json file");
 		cJSON_free(json);
 		free(update);
 		return 1;
@@ -478,8 +472,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	/* get columns */
 	cJSON *columns = cJSON_GetObjectItem(json, "columns");
 	if (!columns || !cJSON_IsArray(columns)){
-		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-				" can't get columns from json file\n");
+		ERR("%s", "can't get columns from json file");
 		cJSON_free(json);
 		free(update);
 		return 1;
@@ -502,8 +495,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	char *errmsg = NULL;
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-				" sqlite3_exec: %s: %s\n", SQL, errmsg);
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);
 	}
 
 	/* get values for each column and update local database */
@@ -511,14 +503,12 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	cJSON_ArrayForEach(column, columns){
 		cJSON *name = cJSON_GetObjectItem(column, "name");
 		if (!name || !cJSON_IsString(name)){
-			ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-					" can't get column name from json file\n");
+			ERR("%s", "can't get column name from json file");
 			continue;
 		}		
 		cJSON *type = cJSON_GetObjectItem(column, "type");
 		if (!type || !cJSON_IsNumber(type)){
-			ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-					" can't get column type from json file\n");
+			ERR("%s", "can't get column type from json file");
 			continue;
 		}		
 		if (cJSON_GetNumberValue(type) == KDATA2_TYPE_DATA) {
@@ -528,8 +518,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 
 			cJSON *data = cJSON_GetObjectItem(column, "data");
 			if (!data){
-				ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-						" can't get column data from json file\n");
+				ERR("%s", "can't get column data from json file");
 				continue;
 			}			
 			c_yandex_disk_download_data(update->d->access_token, 
@@ -539,8 +528,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 		} else {
 			cJSON *value = cJSON_GetObjectItem(column, "value");
 			if (!value){
-				ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-						" can't get column value from json file\n");
+				ERR("%s", "can't get column value from json file");
 				continue;
 			}		
 			if (cJSON_GetNumberValue(type) == KDATA2_TYPE_NUMBER){
@@ -551,8 +539,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 				);
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
-					ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-							" sqlite3_exec: %s: %s\n", SQL, errmsg);
+					ERR("sqlite3_exec: %s: %s", SQL, errmsg);
 				}
 			} else {
 				snprintf(SQL, BUFSIZ-1,
@@ -562,8 +549,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 				);				
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
-					ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
-							" sqlite3_exec: %s: %s\n", SQL, errmsg);
+					ERR("sqlite3_exec: %s: %s", SQL, errmsg);
 				}
 			}
 		}
@@ -590,8 +576,7 @@ _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 	/* allocate struct and fill update */
 	struct kdata2_update *update = NEW(struct kdata2_update);
 	if (!update){
-		ERR("%s", "ERROR! _download_from_YandexDisk_to_local_database:"
-				" can't allocate memory for struct kdata2_update\n");
+		ERR("%s", "can't allocate memory for struct kdata2_update");
 		return;
 	}
 	update->d = d;
@@ -610,15 +595,14 @@ _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 static int 
 _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char * error){
 	if (error){
-		ERR("ERROR! _for_each_file_in_YandexDisk_database:"
-				" %s\n", error);
+		ERR("%s", error);
 		return 0;
 	}
 	
 	kdata2_t *d = user_data;
 
 	if (!d){
-		ERR("%s", "ERROR! _for_each_file_in_YandexDisk_database: data is NULL\n");
+		ERR("%s", "data is NULL");
 		return -1;
 	}	
 
@@ -637,8 +621,7 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 		
 		int res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 		if (res != SQLITE_OK) {
-			ERR("ERROR! _for_each_file_in_YandexDisk_database:"
-					" sqlite3_prepare_v2: %s: %s\n", SQL, sqlite3_errmsg(d->db));
+			ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db));
 			continue;
 		}	
 
@@ -670,14 +653,13 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 static int 
 _for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * error){
 	if (error){
-		ERR("ERROR! _for_each_file_in_YandexDisk_deleted:"
-				" %s\n", error);
+		ERR("%s", error);
 		return 0;
 	}
 
 	kdata2_t *d = user_data;
 	if (!d){
-		ERR("%s", "ERROR! _for_each_file_in_YandexDisk_deleted: data is NULL\n");
+		ERR("%s", "data is NULL");
 		return -1;
 	}	
 
@@ -692,8 +674,7 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * 
 		
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			ERR("ERROR! _for_each_file_in_YandexDisk_deleted:"
-					" sqlite3_exec: %s: %s\n", SQL, errmsg);
+			ERR("sqlite3_exec: %s: %s", SQL, errmsg);
 		}		
 	}
 	
@@ -718,12 +699,12 @@ static void _yd_update(kdata2_t *d){
 	/* check Yandex Disk Connection */
 	c_yd_file_t file;
 	if (!c_yandex_disk_file_info(d->access_token, "app:/", &file, &errmsg)){
-			ERR("%s", "ERROR! _yd_update: can't connect to Yandex Disk\n");
+			ERR("%s", "can't connect to Yandex Disk");
 		return;
 	}	
 	
 	if (errmsg){
-			ERR("ERROR! _yd_update: %s\n", errmsg);
+			ERR("%s", errmsg);
 		return;
 	}	
 
@@ -738,7 +719,7 @@ static void _yd_update(kdata2_t *d){
 	SQL = "SELECT * from _kdata2_updates"; 
 	sqlite3_exec(d->db, SQL, _for_each_update_in_SQLite, d, &errmsg);
 	if (errmsg){
-			ERR("ERROR! _yd_update: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);
+			ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);
 		return;
 	}	
 
@@ -756,7 +737,7 @@ static void * _yd_thread(void * data){
 	struct kdata2 *d = data; 
 
 	while (1) {
-		ERR("%s", "yd_daemon: updating data...\n");
+		LOG("%s", "updating data...");
 		_yd_update(d);
 		sleep(d->sec);
 	}
@@ -772,14 +753,14 @@ static void _yd_daemon_init(kdata2_t * d){
 	
 	err = pthread_attr_init(&attr);
 	if (err) {
-		ERR("ERROR! yd_daemon: can't set thread attributes: %d\n", err);
+		ERR("can't set thread attributes: %d", err);
 		exit(err);
 	}	
 	
 	//create new thread
 	err = pthread_create(&(d->tid), &attr, _yd_thread, d);
 	if (err) {
-		ERR("ERROR! yd_daemon: can't create thread: %d\n", err);
+		ERR("yd_daemon: can't create thread: %d", err);
 		exit(err);
 	}
 }
@@ -792,7 +773,7 @@ int kdata2_init(
 		...
 		)
 {
-	ERR("%s", "Start kdata2_init...\n");	
+	LOG("%s", "Start kdata2_init...");	
 
 	/*
 	 * For init:
@@ -808,12 +789,12 @@ int kdata2_init(
 	
 	/* allocate kdata2_t */
 	if (!database){
-		ERR("%s", "ERROR! kdata2_init: database pointer is NULL\n");	
+		ERR("%s", "database pointer is NULL");	
 		return -1;
 	}
 	kdata2_t *d = NEW(kdata2_t);
 	if (!d){
-		ERR("%s", "ERROR! kdata2_init: can't allocate kdata2_t *database\n");	
+		ERR("%s", "kdata2_init: can't allocate kdata2_t *database");	
 		return -1;
 	}
 	*database = d;
@@ -823,7 +804,7 @@ int kdata2_init(
 
 	/* check filepath */
 	if (!filepath){
-		ERR("%s", "ERROR! kdata2_init: filepath is NULL\n");	
+		ERR("%s", "filepath is NULL");	
 		return -1;
 	}
 	strncpy(d->filepath, filepath, BUFSIZ-1);
@@ -833,8 +814,7 @@ int kdata2_init(
 	/* create database if needed */
 	err = sqlite3_open_v2(d->filepath, &(d->db), SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
 	if (err){
-		ERR("ERROR! kdata2_init:"
-				" failed to open/create database at path: '%s': %s\n", 
+		ERR("failed to open/create database at path: '%s': %s", 
 						d->filepath, sqlite3_errmsg(d->db));
 		return err;
 	} 
@@ -842,7 +822,7 @@ int kdata2_init(
 	/* allocate and fill tables array */
 	kdata2_table *tables = malloc(8);
 	if (!tables){
-		ERR("%s", "ERROR! kdata2_init: can't allocate kdata2_t_table\n");	
+		ERR("%s", "can't allocate kdata2_t_table");	
 		return -1;
 	}	
 	int tcount = 0;
@@ -863,7 +843,7 @@ int kdata2_init(
 		// realloc tables
 		void *p = realloc(tables, tcount * 8 + 8);
 		if (!p) {
-			ERR("%s", "ERROR! kdata2_init: can't realloc tables\n");	
+			ERR("%s", "can't realloc tables");	
 			break;
 		}
 		tables = p;
@@ -878,7 +858,6 @@ int kdata2_init(
 	d->tables = tables;
 
 	/* fill SQL string with data and update tables in memory*/
-	ERR("%s", "TABLES: \n");
 	struct kdata2_tab ** tab_ptr = d->tables; // pointer to iterate
 	while (*tab_ptr) {
 
@@ -888,8 +867,6 @@ int kdata2_init(
 		/* for each table in dataset */
 		struct kdata2_tab *tab = *tab_ptr++;
 		
-		ERR("table %s\n", tab->tablename);
-
 		/* check if columns exists */
 		if (!tab->columns)
 			continue;
@@ -899,14 +876,10 @@ int kdata2_init(
 			continue;
 
 		/* add to SQL string */
-		sprintf(SQL, "CREATE TABLE IF NOT EXISTS '%s' ( ", tab->tablename);
-
-		ERR("%s", "COLUMNS: \n");
 		struct kdata2_col ** col_ptr = tab->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
 			struct kdata2_col *col = *col_ptr++;
-			ERR("column %s\n", col->columnname);
 
 			/* check if name exists */
 			if (col->columnname[0] == 0)
@@ -942,7 +915,7 @@ int kdata2_init(
 		/* run SQL command */
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
+			ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
 			return -1;
 		}
 		
@@ -950,12 +923,12 @@ int kdata2_init(
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN uuid TEXT;", tab->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
-			ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
+			ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
 
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", tab->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
-			ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
+			ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
 
 	}
 
@@ -975,7 +948,7 @@ int kdata2_init(
 	/* run SQL command */
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! kdata2_init: sqlite3_exec: %s\n", errmsg);	
+		ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
 		return -1;
 	}
 
@@ -1001,7 +974,10 @@ int kdata2_set_number_for_uuid(
 {
 	if (!uuid){
 		char _uuid[37];
-		uuid_new(_uuid);
+		if (uuid_new(_uuid)){
+			ERR("%s", "can't generate uuid");
+			return -1;
+		}
 		uuid = _uuid;
 	}
 
@@ -1024,7 +1000,7 @@ int kdata2_set_number_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! kdata2_set_number_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}
 
@@ -1041,7 +1017,7 @@ int kdata2_set_number_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! kdata2_set_number_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}
 
@@ -1057,7 +1033,10 @@ int kdata2_set_text_for_uuid(
 {
 	if (!uuid){
 		char _uuid[37];
-		uuid_new(_uuid);
+		if (uuid_new(_uuid)){
+			ERR("%s", "can't generate uuid");
+			return -1;
+		}
 		uuid = _uuid;
 	}
 
@@ -1080,7 +1059,7 @@ int kdata2_set_text_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! kdata2_set_text_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}
 
@@ -1097,7 +1076,7 @@ int kdata2_set_text_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! kdata2_set_text_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}
 	
@@ -1114,12 +1093,15 @@ int kdata2_set_data_for_uuid(
 {
 	if (!uuid){
 		char _uuid[37];
-		uuid_new(_uuid);
+		if (uuid_new(_uuid)){
+			ERR("%s", "can't generate uuid");
+			return -1;
+		}
 		uuid = _uuid;
 	}
 
 	if (!data || !len){
-		ERR("%s", "ERROR! kdata2_set_data_for_uuid: no data\n");
+		ERR("%s", "no data");
 		return 1;
 	}	
 
@@ -1142,7 +1124,7 @@ int kdata2_set_data_for_uuid(
 	);	
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
-		ERR("ERROR! kdata2_set_data_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}	
 
@@ -1150,18 +1132,18 @@ int kdata2_set_data_for_uuid(
 	
 	sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("ERROR! kdata2_set_data_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", sqlite3_errmsg(d->db), SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", sqlite3_errmsg(d->db), SQL);	
 		return -1;
 	}	
 
 	res = sqlite3_bind_blob(stmt, 1, data, len, SQLITE_TRANSIENT);
 	if (res != SQLITE_OK) {
-		ERR("ERROR! kdata2_set_data_for_uuid: sqlite3_bind_blob: %s\n", sqlite3_errmsg(d->db));	
+		ERR("sqlite3_bind_blob: %s", sqlite3_errmsg(d->db));	
 	}	
 
     if((res = sqlite3_step(stmt)) != SQLITE_DONE)
     {
-		ERR("ERROR! kdata2_set_data_for_uuid: sqlite3_step: %s\n", sqlite3_errmsg(d->db));	
+		ERR("sqlite3_step: %s", sqlite3_errmsg(d->db));	
         sqlite3_reset(stmt);
     } 
 
@@ -1180,7 +1162,7 @@ int kdata2_set_data_for_uuid(
 	);
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
-		ERR("ERROR! kdata2_set_data_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}	
 
@@ -1193,7 +1175,7 @@ int kdata2_remove_for_uuid(
 		const char *uuid)
 {
 	if (!uuid){
-		ERR("%s", "ERROR! kdata2_set_data_for_uuid: no uuid\n");
+		ERR("%s", "no uuid");
 		return 1;
 	}	
 	
@@ -1204,7 +1186,7 @@ int kdata2_remove_for_uuid(
 
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! kdata2_set_data_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}	
 
@@ -1221,7 +1203,7 @@ int kdata2_remove_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("ERROR! kdata2_set_data_for_uuid: sqlite3_exec: %s, for SQL request: %s\n", errmsg, SQL);	
+		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
 		return -1;
 	}	
 	
@@ -1258,7 +1240,7 @@ void kdata2_get(
 	char *SQL = STR("SELECT * FROM '%s' %s", tablename, predicate);
 	res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("ERROR! kdata2_get: sqlite3_prepare_v2 error %s, for SQL request: %s\n", sqlite3_errmsg(d->db), SQL);
+		ERR("sqlite3_prepare_v2 error %s, for SQL request: %s", sqlite3_errmsg(d->db), SQL);
 		return;
 	}	
 
@@ -1298,7 +1280,7 @@ void kdata2_get(
 					/* buffer overload safe get data */
 					char *buf = malloc(len + 1);
 					if (!buf){
-						ERR("%s", "ERROR! kdata2_get: can't allocate memory for buffer\n");
+						ERR("%s", "can't allocate memory for buffer");
 						break;
 					}
 					strncpy(buf, (const char *)value, len);
@@ -1343,12 +1325,12 @@ int kdata2_close(kdata2_t *d){
 
 int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 	if (!access_token){
-		ERR("%s", "ERROR! kdata2_set_access_token: access_token is NULL\n");
+		ERR("%s", "access_token is NULL");
 		return -1;
 	}
 
 	if (!d){
-		ERR("%s", "ERROR! kdata2_set_access_token: dataset is NULL\n");
+		ERR("%s", "dataset is NULL");
 		return -1;
 	}
 
@@ -1361,21 +1343,21 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 	// check table pointer
 	if (!t){
-		ERR("%s", "ERROR! kdata2_table_new: table pointer is NULL\n");
+		ERR("%s", "table pointer is NULL");
 		return;
 	}
 	
 	/* allocate new table */
 	*t = NEW(struct kdata2_tab);
 	if (!*t){
-		ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for table\n");
+		ERR("%s", "can't allocate memory for struct kdata2_tab");
 		return;
 	}
 	
 	// pointer to collumns
 	struct kdata2_col **columns = malloc(8);
 	if (!columns){
-		ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for columns array\n");
+		ERR("%s", "can't allocate memory for columns array");
 		return;
 	}
 
@@ -1403,7 +1385,7 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 		/* allocate new column */
 		struct kdata2_col *new = NEW(struct kdata2_col);
 		if (!new){
-			ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for column\n");
+			ERR("%s", "can't allocate memory for column");
 			break;
 		}
 
@@ -1418,7 +1400,7 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 		//realloc columns array
 		void *p = realloc(columns, i * 8 + 8);
 		if (!p){
-			ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for columns array\n");
+			ERR("%s", "can't allocate memory for columns array");
 			break;
 		}		
 		columns = p;

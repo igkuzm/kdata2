@@ -30,7 +30,7 @@ extern "C" {
 	#include <CoreFoundation/CoreFoundation.h>
 	void NSLog(CFStringRef format, ...);
 	#define LOG(fmt, ...) NSLog(CFSTR(fmt), ##__VA_ARGS__)
-	#define ERR(fmt, ...) LOG(fmt, __VA_ARGS__) 
+	#define ERR(fmt, ...) LOG("E/_%s: %s", __func__, STR(fmt, __VA_ARGS__)) 
 #else
 	#define LOG(...) printf("%s: _%s: %s\n",   __FILE__, __func__, STR(__VA_ARGS__))
 	#define ERR(...) perror(STR("%s: _%s: %s", __FILE__, __func__, STR(__VA_ARGS__))) 
