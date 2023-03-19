@@ -45,7 +45,7 @@ struct kdata2_table {
 	struct kdata2_column ** columns;   // NULL-terminated array of column pointers
 };
 
-/* allocate table structure with columns; va_args: type, columnname, ... NULL */
+/* allocate table structure with allocated columns; va_args: type, columnname, ... NULL */
 void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...); 
 
 /* this is kdata2 database */
