@@ -20,19 +20,9 @@
 #include "cYandexDisk/cJSON.h"
 #include "cYandexDisk/uuid4/uuid4.h"
 
-#ifndef logfile
-#define logfile stderr
-#endif /* ifndef logfile */
-
-#ifdef __ANDROID__
-	#include <android/log.h>
-	#define ERR(...) __android_log_print(ANDROID_LOG_ERROR, "kdata2", __VA_ARGS__) 
-#else
-	#define ERR(...) ({fprintf(logfile, __VA_ARGS__);})
-#endif
+#include "log.h"
 
 #define NEW(T)   ({T *new = malloc(sizeof(T)); new;})
-#define STR(...) ({char str[BUFSIZ]; sprintf(str, __VA_ARGS__); str;})
 
 static void _uuid_new(char *uuid){
 	//create uuid
@@ -41,7 +31,7 @@ static void _uuid_new(char *uuid){
 	uuid4_gen(&state, &identifier);
 	if (!uuid4_to_s(identifier, uuid, 37)){
 		perror("can't generate UUID\n");
-		ERR("ERROR! can't generate UUID\n");
+		ERR("%s", "ERROR! can't generate UUID\n");
 		return;
 	}
 }
@@ -68,7 +58,7 @@ static int
 _remove_local_update(void *user_data, char *error){
 	struct kdata2_update *update = user_data;
 	if (!update){
-		ERR("ERROR! _remove_local_update: data is NULL\n");
+		ERR("%s", "ERROR! _remove_local_update: data is NULL\n");
 		return -1;
 	}
 	
@@ -107,7 +97,7 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	struct kdata2_update *update = user_data;
 
 	if (!update){
-		ERR("ERROR! _after_upload_to_YandexDisk: data is NULL\n");
+		ERR("%s","ERROR! _after_upload_to_YandexDisk: data is NULL\n");
 		return -1;
 	}	
 
@@ -129,7 +119,7 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 		ERR("ERROR! _after_upload_to_YandexDisk: %s\n", errmsg);
 
 	if (!file.name[0]) {
-		ERR("ERROR! _after_upload_to_YandexDisk: can't get file in _after_upload_to_YandexDisk\n");
+		ERR("%s", "ERROR! _after_upload_to_YandexDisk: can't get file in _after_upload_to_YandexDisk\n");
 		return -1;
 	}
 
@@ -152,25 +142,25 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	 */
 
 	if (!update){
-		ERR("ERROR! _upload_local_data_to_Yandex_Disk: data is NULL\n");
+		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: data is NULL\n");
 		return;
 	}	
 
 	if (!update->d){
-		ERR("ERROR! _upload_local_data_to_Yandex_Disk: update->data is NULL\n");
+		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: update->data is NULL\n");
 		return;
 	}	
 
 	/* create json */
 	cJSON *json = cJSON_CreateObject();
 	if (!json){
-		ERR("ERROR! _upload_local_data_to_Yandex_Disk: can't cJSON_CreateObject\n");
+		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: can't cJSON_CreateObject\n");
 		return;
 	}
 	cJSON_AddItemToObject(json, "tablename", cJSON_CreateString(update->table));
 	cJSON *columns = cJSON_CreateArray();
 	if (!columns){
-		ERR("ERROR! _upload_local_data_to_Yandex_Disk: can't cJSON_CreateArray\n");
+		ERR("%s", "ERROR! _upload_local_data_to_Yandex_Disk: can't cJSON_CreateArray\n");
 		return;
 	}	
 
@@ -219,7 +209,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 			/* fill json with data */
 			cJSON *column = cJSON_CreateObject();
 			if (!column){
-				ERR("ERROR! _fill_json_with_SQLite_data: cant cJSON_CreateObject\n");
+				ERR("%s", "ERROR! _fill_json_with_SQLite_data: cant cJSON_CreateObject\n");
 				continue;
 			}
 			cJSON_AddItemToObject(column, "name", cJSON_CreateString(title));
@@ -248,7 +238,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 				/* allocate new struct update for thread */
 				struct kdata2_update *new_update = NEW(struct kdata2_update);
 				if (!new_update){
-					ERR("ERROR! _fill_json_with_SQLite_data:"
+					ERR("%s", "ERROR! _fill_json_with_SQLite_data:"
 							" can't allocate memory for struct kdata2_update\n");
 					break;
 				}
@@ -319,14 +309,14 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 	kdata2_t *d = user_data;
 
 	if (!d){
-		ERR("ERROR! _for_each_update_in_SQLite: data is NULL\n");
+		ERR("%s", "ERROR! _for_each_update_in_SQLite: data is NULL\n");
 		return 0; // return 0 - do not interrupt SQL
 	}	
 
 	/* new kdata_update */
 	struct kdata2_update *update = NEW(struct kdata2_update);
 	if (!update){
-			ERR("ERROR! _for_each_update_in_SQLite:"
+			ERR("%s", "ERROR! _for_each_update_in_SQLite:"
 				" can't allocate memory for struct kdata2_update\n");
 		return 0; // return 0 - do not interrupt SQL
 	}
@@ -372,7 +362,7 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 
 	if (errmsg){
 		if (strcmp(errmsg, "UnauthorizedError") == 0){
-			ERR("ERROR! _for_each_update_in_SQLite: Unauthorized to Yandex Disk\n");
+			ERR("%s", "ERROR! _for_each_update_in_SQLite: Unauthorized to Yandex Disk\n");
 			
 			free(update);
 			return 0;
@@ -404,7 +394,7 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 				return -1;
 			}
 		}
-		ERR("ERROR! _for_each_update_in_SQLite: unknown error\n");
+		ERR("%s", "ERROR! _for_each_update_in_SQLite: unknown error\n");
 			
 		free(update);
 		return -1;
@@ -422,12 +412,12 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	struct kdata2_update *update = user_data;	
 
 	if (!update){
-		ERR("ERROR! _download_data_from_YandexDisk_to_local_database_cb: data is NULL\n");
+		ERR("%s", "ERROR! _download_data_from_YandexDisk_to_local_database_cb: data is NULL\n");
 		return -1;
 	}	
 
 	if (!update->d){
-		ERR("ERROR! _download_data_from_YandexDisk_to_local_database_cb: update->data is NULL\n");
+		ERR("%s", "ERROR! _download_data_from_YandexDisk_to_local_database_cb: update->data is NULL\n");
 		return -1;
 	}	
 
@@ -468,19 +458,19 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	struct kdata2_update *update = user_data;
 
 	if (!update){
-		ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb: data is NULL\n");
+		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb: data is NULL\n");
 		return -1;
 	}	
 
 	if (!update->d){
-		ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb: update->data is NULL\n");
+		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb: update->data is NULL\n");
 		return -1;
 	}	
 
 	/* data is json file */
 	cJSON *json = cJSON_ParseWithLength(data, size);
 	if (!json){
-		ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb: can't parse json file\n");
+		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb: can't parse json file\n");
 		free(update);
 		return 1;
 	}
@@ -488,7 +478,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	/* get tablename */
 	cJSON *tablename = cJSON_GetObjectItem(json, "tablename");
 	if (!tablename){
-		ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
+		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
 				" can't get tablename from json file\n");
 		cJSON_free(json);
 		free(update);
@@ -501,7 +491,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	/* get columns */
 	cJSON *columns = cJSON_GetObjectItem(json, "columns");
 	if (!columns || !cJSON_IsArray(columns)){
-		ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
+		ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
 				" can't get columns from json file\n");
 		cJSON_free(json);
 		free(update);
@@ -534,13 +524,13 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	cJSON_ArrayForEach(column, columns){
 		cJSON *name = cJSON_GetObjectItem(column, "name");
 		if (!name || !cJSON_IsString(name)){
-			ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
+			ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
 					" can't get column name from json file\n");
 			continue;
 		}		
 		cJSON *type = cJSON_GetObjectItem(column, "type");
 		if (!type || !cJSON_IsNumber(type)){
-			ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
+			ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
 					" can't get column type from json file\n");
 			continue;
 		}		
@@ -551,7 +541,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 
 			cJSON *data = cJSON_GetObjectItem(column, "data");
 			if (!data){
-				ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
+				ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
 						" can't get column data from json file\n");
 				continue;
 			}			
@@ -562,7 +552,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 		} else {
 			cJSON *value = cJSON_GetObjectItem(column, "value");
 			if (!value){
-				ERR("ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
+				ERR("%s", "ERROR! _download_json_from_YandexDisk_to_local_database_cb:"
 						" can't get column value from json file\n");
 				continue;
 			}		
@@ -613,7 +603,7 @@ _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 	/* allocate struct and fill update */
 	struct kdata2_update *update = NEW(struct kdata2_update);
 	if (!update){
-		ERR("ERROR! _download_from_YandexDisk_to_local_database:"
+		ERR("%s", "ERROR! _download_from_YandexDisk_to_local_database:"
 				" can't allocate memory for struct kdata2_update\n");
 		return;
 	}
@@ -641,7 +631,7 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 	kdata2_t *d = user_data;
 
 	if (!d){
-		ERR("ERROR! _for_each_file_in_YandexDisk_database: data is NULL\n");
+		ERR("%s", "ERROR! _for_each_file_in_YandexDisk_database: data is NULL\n");
 		return -1;
 	}	
 
@@ -700,7 +690,7 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * 
 
 	kdata2_t *d = user_data;
 	if (!d){
-		ERR("ERROR! _for_each_file_in_YandexDisk_deleted: data is NULL\n");
+		ERR("%s", "ERROR! _for_each_file_in_YandexDisk_deleted: data is NULL\n");
 		return -1;
 	}	
 
@@ -741,7 +731,7 @@ static void _yd_update(kdata2_t *d){
 	/* check Yandex Disk Connection */
 	c_yd_file_t file;
 	if (!c_yandex_disk_file_info(d->access_token, "app:/", &file, &errmsg)){
-			ERR("ERROR! _yd_update: can't connect to Yandex Disk\n");
+			ERR("%s", "ERROR! _yd_update: can't connect to Yandex Disk\n");
 		return;
 	}	
 	
@@ -779,7 +769,7 @@ static void * _yd_thread(void * data){
 	struct kdata2 *d = data; 
 
 	while (1) {
-		ERR("yd_daemon: updating data...\n");
+		ERR("%s", "yd_daemon: updating data...\n");
 		_yd_update(d);
 		sleep(d->sec);
 	}
@@ -815,7 +805,7 @@ int kdata2_init(
 		...
 		)
 {
-	ERR("Start kdata2_init...\n");	
+	ERR("%s", "Start kdata2_init...\n");	
 
 	/*
 	 * For init:
@@ -831,12 +821,12 @@ int kdata2_init(
 	
 	/* allocate kdata2_t */
 	if (!database){
-		ERR("ERROR! kdata2_init: database pointer is NULL\n");	
+		ERR("%s", "ERROR! kdata2_init: database pointer is NULL\n");	
 		return -1;
 	}
 	kdata2_t *d = NEW(kdata2_t);
 	if (!d){
-		ERR("ERROR! kdata2_init: can't allocate kdata2_t *database\n");	
+		ERR("%s", "ERROR! kdata2_init: can't allocate kdata2_t *database\n");	
 		return -1;
 	}
 	*database = d;
@@ -846,7 +836,7 @@ int kdata2_init(
 
 	/* check filepath */
 	if (!filepath){
-		ERR("ERROR! kdata2_init: filepath is NULL\n");	
+		ERR("%s", "ERROR! kdata2_init: filepath is NULL\n");	
 		return -1;
 	}
 	strncpy(d->filepath, filepath, BUFSIZ-1);
@@ -865,7 +855,7 @@ int kdata2_init(
 	/* allocate and fill tables array */
 	kdata2_table *tables = malloc(8);
 	if (!tables){
-		ERR("ERROR! kdata2_init: can't allocate kdata2_t_table\n");	
+		ERR("%s", "ERROR! kdata2_init: can't allocate kdata2_t_table\n");	
 		return -1;
 	}	
 	int tcount = 0;
@@ -886,7 +876,7 @@ int kdata2_init(
 		// realloc tables
 		void *p = realloc(tables, tcount * 8 + 8);
 		if (!p) {
-			ERR("ERROR! kdata2_init: can't realloc tables\n");	
+			ERR("%s", "ERROR! kdata2_init: can't realloc tables\n");	
 			break;
 		}
 		tables = p;
@@ -901,7 +891,7 @@ int kdata2_init(
 	d->tables = tables;
 
 	/* fill SQL string with data and update tables in memory*/
-	ERR("TABLES: \n");
+	ERR("%s", "TABLES: \n");
 	struct kdata2_tab ** tab_ptr = d->tables; // pointer to iterate
 	while (*tab_ptr) {
 
@@ -924,7 +914,7 @@ int kdata2_init(
 		/* add to SQL string */
 		sprintf(SQL, "CREATE TABLE IF NOT EXISTS '%s' ( ", tab->tablename);
 
-		ERR("COLUMNS: \n");
+		ERR("%s", "COLUMNS: \n");
 		struct kdata2_col ** col_ptr = tab->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
@@ -1142,7 +1132,7 @@ int kdata2_set_data_for_uuid(
 	}
 
 	if (!data || !len){
-		ERR("ERROR! kdata2_set_data_for_uuid: no data\n");
+		ERR("%s", "ERROR! kdata2_set_data_for_uuid: no data\n");
 		return 1;
 	}	
 
@@ -1216,7 +1206,7 @@ int kdata2_remove_for_uuid(
 		const char *uuid)
 {
 	if (!uuid){
-		ERR("ERROR! kdata2_set_data_for_uuid: no uuid\n");
+		ERR("%s", "ERROR! kdata2_set_data_for_uuid: no uuid\n");
 		return 1;
 	}	
 	
@@ -1269,7 +1259,7 @@ void kdata2_get(
 		predicate = "";
 
 	if (!callback){
-		ERR("ERROR! kdata2_get: callback is NULL\n");
+		ERR("%s", "ERROR! kdata2_get: callback is NULL\n");
 		return;
 	}
 
@@ -1321,7 +1311,7 @@ void kdata2_get(
 					/* buffer overload safe get data */
 					char *buf = malloc(len + 1);
 					if (!buf){
-						ERR("ERROR! kdata2_get: can't allocate memory for buffer\n");
+						ERR("%s", "ERROR! kdata2_get: can't allocate memory for buffer\n");
 						break;
 					}
 					strncpy(buf, (const char *)value, len);
@@ -1342,6 +1332,9 @@ void kdata2_get(
 						return;
 					}
 					break;							 
+				
+				default:
+					break;
 				} 
 			}
 		}
@@ -1363,12 +1356,12 @@ int kdata2_close(kdata2_t *d){
 
 int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 	if (!access_token){
-		ERR("ERROR! kdata2_set_access_token: access_token is NULL\n");
+		ERR("%s", "ERROR! kdata2_set_access_token: access_token is NULL\n");
 		return -1;
 	}
 
 	if (!d){
-		ERR("ERROR! kdata2_set_access_token: dataset is NULL\n");
+		ERR("%s", "ERROR! kdata2_set_access_token: dataset is NULL\n");
 		return -1;
 	}
 
@@ -1381,21 +1374,21 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 	// check table pointer
 	if (!t){
-		ERR("ERROR! kdata2_table_new: table pointer is NULL\n");
+		ERR("%s", "ERROR! kdata2_table_new: table pointer is NULL\n");
 		return;
 	}
 	
 	/* allocate new table */
 	*t = NEW(struct kdata2_tab);
 	if (!*t){
-		ERR("ERROR! kdata2_table_new: can't allocate memory for table\n");
+		ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for table\n");
 		return;
 	}
 	
 	// pointer to collumns
 	struct kdata2_col **columns = malloc(8);
 	if (!columns){
-		ERR("ERROR! kdata2_table_new: can't allocate memory for columns array\n");
+		ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for columns array\n");
 		return;
 	}
 
@@ -1423,7 +1416,7 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 		/* allocate new column */
 		struct kdata2_col *new = NEW(struct kdata2_col);
 		if (!new){
-			ERR("ERROR! kdata2_table_new: can't allocate memory for column\n");
+			ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for column\n");
 			break;
 		}
 
@@ -1438,7 +1431,7 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 		//realloc columns array
 		void *p = realloc(columns, i * 8 + 8);
 		if (!p){
-			ERR("ERROR! kdata2_table_new: can't allocate memory for columns array\n");
+			ERR("%s", "ERROR! kdata2_table_new: can't allocate memory for columns array\n");
 			break;
 		}		
 		columns = p;
