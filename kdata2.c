@@ -24,13 +24,6 @@
 
 #define NEW(T)   ({T *new = malloc(sizeof(T)); new;})
 
-static void _kdata_free_data(kdata2_t * d){
-	if (!d->tables)
-		return;
-	
-	free(d);
-}
-
 struct kdata2_update {
 	char table[128];
 	char uuid[37];
@@ -610,9 +603,9 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 	bool data_exists = false; 
 
 	/* for each table in database */
-	struct kdata2_tab **tables = d->tables;
+	struct kdata2_table **tables = d->tables;
 	while (*tables) {
-		struct kdata2_tab *table = *tables++;
+		struct kdata2_table *table = *tables++;
 	
 		sqlite3_stmt *stmt;
 		
@@ -664,9 +657,9 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * 
 	}	
 
 	/* for each table in database */
-	struct kdata2_tab **tables = d->tables;
+	struct kdata2_table **tables = d->tables;
 	while (*tables) {
-		struct kdata2_tab *table = *tables++;
+		struct kdata2_table *table = *tables++;
 	
 		/* remove data from SQLite database */
 		char *errmsg = NULL;
@@ -820,7 +813,7 @@ int kdata2_init(
 	} 
 
 	/* allocate and fill tables array */
-	kdata2_table *tables = malloc(8);
+	struct kdata2_table **tables = malloc(8);
 	if (!tables){
 		ERR("%s", "can't allocate kdata2_t_table");	
 		return -1;
@@ -831,7 +824,7 @@ int kdata2_init(
 	va_list args;
 	va_start(args, sec);
 
-	kdata2_table table = va_arg(args, kdata2_table);
+	struct kdata2_table * table = va_arg(args, struct kdata2_table *);
 	if (!table)
 		return -1;
 
@@ -849,7 +842,7 @@ int kdata2_init(
 		tables = p;
 
 		// iterate
-		table = va_arg(args, kdata2_table);
+		table = va_arg(args, struct kdata2_table *);
 	}	
 	/* NULL-terminate tables array */
 	tables[tcount] = NULL;
@@ -858,14 +851,14 @@ int kdata2_init(
 	d->tables = tables;
 
 	/* fill SQL string with data and update tables in memory*/
-	struct kdata2_tab ** tab_ptr = d->tables; // pointer to iterate
+	struct kdata2_table ** tab_ptr = d->tables; // pointer to iterate
 	while (*tab_ptr) {
 
 		/* create SQL string */
 		char SQL[BUFSIZ] = "";
 
 		/* for each table in dataset */
-		struct kdata2_tab *tab = *tab_ptr++;
+		struct kdata2_table *tab = *tab_ptr++;
 		
 		/* check if columns exists */
 		if (!tab->columns)
@@ -876,10 +869,10 @@ int kdata2_init(
 			continue;
 
 		/* add to SQL string */
-		struct kdata2_col ** col_ptr = tab->columns; // pointer to iterate
+		struct kdata2_column ** col_ptr = tab->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
-			struct kdata2_col *col = *col_ptr++;
+			struct kdata2_column *col = *col_ptr++;
 
 			/* check if name exists */
 			if (col->columnname[0] == 0)
@@ -1340,7 +1333,7 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 	return 0;
 }
 
-void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
+void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
 	// check table pointer
 	if (!t){
 		ERR("%s", "table pointer is NULL");
@@ -1348,14 +1341,14 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 	}
 	
 	/* allocate new table */
-	*t = NEW(struct kdata2_tab);
+	*t = NEW(struct kdata2_table);
 	if (!*t){
 		ERR("%s", "can't allocate memory for struct kdata2_tab");
 		return;
 	}
 	
 	// pointer to collumns
-	struct kdata2_col **columns = malloc(8);
+	struct kdata2_column **columns = malloc(8);
 	if (!columns){
 		ERR("%s", "can't allocate memory for columns array");
 		return;
@@ -1383,7 +1376,7 @@ void kdata2_table_new(kdata2_table *t, const char * tablename, ...){
 	while (type != KDATA2_TYPE_NULL && columnname != NULL){
 
 		/* allocate new column */
-		struct kdata2_col *new = NEW(struct kdata2_col);
+		struct kdata2_column *new = NEW(struct kdata2_column);
 		if (!new){
 			ERR("%s", "can't allocate memory for column");
 			break;

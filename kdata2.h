@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 18.03.2023
+ * Last Modified Date: 19.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -34,30 +34,28 @@ enum KDATA2_TYPE {
 };
 
 /* this is data column */
-struct kdata2_col {
+struct kdata2_column {
 	enum KDATA2_TYPE type;     // data type
 	char columnname[128];      // name of column
 };
-typedef struct kdata2_col * kdata2_column;
 
 /* this is data table */
-struct kdata2_tab {
-	char tablename[128];       // name of table
-	kdata2_column * columns;   // NULL-terminated array of columns
+struct kdata2_table {
+	char tablename[128];			   // name of table
+	struct kdata2_column ** columns;   // NULL-terminated array of column pointers
 };
-typedef struct kdata2_tab * kdata2_table;
 
-/*to create table structure with columns; va_args: type, columnname, ... NULL */
-void kdata2_table_new(kdata2_table *t, const char * tablename, ...); 
+/* allocate table structure with columns; va_args: type, columnname, ... NULL */
+void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...); 
 
 /* this is kdata2 database */
 typedef struct kdata2 {
-	sqlite3 *db;               // sqlite3 database pointer
-	char filepath[BUFSIZ];     // file path to where store SQLite data 	
-	char access_token[64];     // Yandex Disk access token
-	kdata2_table * tables;     // NULL-terminated array of tables
-	int sec;				   // number of seconds of delay to sinc data with Yandex Disk
-	pthread_t tid;             // Yandex Disk daemon thread id
+	sqlite3 *db;                   // sqlite3 database pointer
+	char filepath[BUFSIZ];         // file path to where store SQLite data 	
+	char access_token[64];         // Yandex Disk access token
+	struct kdata2_table ** tables; // NULL-terminated array of tables pointers
+	int sec;				       // number of seconds of delay to sinc data with Yandex Disk
+	pthread_t tid;                 // Yandex Disk daemon thread id
 } kdata2_t;
 
 /* init function */
