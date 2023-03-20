@@ -20,7 +20,7 @@ extern "C" {
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#include <sqlite3.h>
+#include "sqlite3.h"
 
 #define DATABASE  "kdata_database"
 #define DELETED   "kdata_deleted"
