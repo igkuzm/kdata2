@@ -702,7 +702,7 @@ static void _yd_update(kdata2_t *d){
 
 	/* check Yandex Disk Connection */
 	c_yd_file_t file;
-	if (!c_yandex_disk_file_info(d->access_token, "app:/", &file, &errmsg)){
+	if (c_yandex_disk_file_info(d->access_token, "app:/", &file, &errmsg)){
 			ERR("%s", "can't connect to Yandex Disk");
 		return;
 	}	
