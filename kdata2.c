@@ -838,10 +838,9 @@ int kdata2_init(
 	if (!table)
 		return -1;
 
-	LOG("TABLE: %s", table->tablename);
-
 	//iterate va_args
 	while (table){
+		LOG("TABLE: %s", table->tablename);
 		// add table to tables
 		tables[tcount++] = table;
 		
