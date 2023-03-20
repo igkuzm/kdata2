@@ -16,6 +16,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "Users/kuzmich/src/stroybat/kdata2/log.h"
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
 #include "cYandexDisk/uuid4.h"
@@ -1381,6 +1382,7 @@ void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
 	if (!columnname)
 		return;
 
+	LOG("add columns for table: %s", tablename);
 	//iterate va_args
 	int i = 0;
 	while (type != KDATA2_TYPE_NULL && columnname != NULL){
@@ -1399,6 +1401,8 @@ void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
 
 		/* add column to array */
 		columns[i++] = new;
+
+		LOG("column: %s", new->columnname);
 		
 		//realloc columns array
 		void *p = realloc(columns, i * 8 + 8);
