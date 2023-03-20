@@ -11,6 +11,7 @@
  */
 
 #include "kdata2.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -867,8 +868,6 @@ int kdata2_init(
 		/* for each table in dataset */
 		struct kdata2_table *table = *tables++;
 		
-		LOG("TABLE: %s", table->tablename);
-		
 		/* check if columns exists */
 		if (!table->columns)
 			continue;
@@ -878,6 +877,8 @@ int kdata2_init(
 			continue;
 
 		/* add to SQL string */
+		sprintf(SQL, "CREATE TABLE IF NOT EXISTS %s ( ", table->tablename);
+
 		struct kdata2_column ** col_ptr = table->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
@@ -922,12 +923,12 @@ int kdata2_init(
 		}
 		
 		/* add columns */
-		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN uuid TEXT;", tab->tablename);
+		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN uuid TEXT;", table->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
 			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 
-		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", tab->tablename);
+		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", table->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
 			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
