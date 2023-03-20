@@ -842,8 +842,6 @@ int kdata2_init(
 	while (table){
 		// add table to tables
 		d->tables[tcount++] = table;
-
-		LOG("TABLE: %s", table->tablename);
 		
 		// realloc tables
 		void *p = realloc(d->tables, tcount * 8 + 8);
@@ -868,6 +866,8 @@ int kdata2_init(
 
 		/* for each table in dataset */
 		struct kdata2_table *table = *tables++;
+		
+		LOG("TABLE: %s", table->tablename);
 		
 		/* check if columns exists */
 		if (!table->columns)
