@@ -18,7 +18,7 @@
 
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
-#include "cYandexDisk/uuid.h"
+#include "cYandexDisk/uuid4.h"
 
 #include "log.h"
 
@@ -34,6 +34,17 @@ struct kdata2_update {
 	void *data_to_free;
 	char column[128];
 };
+
+int uuid_new(char uuid[37]){
+	UUID4_STATE_T state; UUID4_T identifier;
+	uuid4_seed(&state);
+	uuid4_gen(&state, &identifier);
+	if (!uuid4_to_s(identifier, uuid, 37)){
+		return -1;
+	}
+
+	return 0;
+}
 
 static int 
 _remove_local_update(void *user_data, char *error){
