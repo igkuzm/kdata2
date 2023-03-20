@@ -26,6 +26,10 @@ else()
 	LIST(APPEND ADDLIBS sqlite3)
 endif()
 
+if(APPLE)
+	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -framework Foundation")
+endif()
+
 add_library(${TARGET} STATIC
 	kdata2.c
 	${SQLITE_SRC}
