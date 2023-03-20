@@ -55,7 +55,7 @@ _remove_local_update(void *user_data, char *error){
 	SQL = STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", update->uuid); 
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s", errmsg);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}	
 
@@ -64,7 +64,7 @@ _remove_local_update(void *user_data, char *error){
 					update->table, update->timestamp, update->uuid); 
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s", errmsg);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}		
 
@@ -151,8 +151,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	char *SQL = STR("SELECT * FROM '%s' WHERE uuid = '%s'", update->table, update->uuid);
 	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_prepare_v2 error %s,"
-				" for SQL request: %s", sqlite3_errmsg(update->d->db), SQL);
+		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db));
 		return;
 	}	
 
@@ -712,7 +711,7 @@ static void _yd_update(kdata2_t *d){
 	SQL = "SELECT * from _kdata2_updates"; 
 	sqlite3_exec(d->db, SQL, _for_each_update_in_SQLite, d, &errmsg);
 	if (errmsg){
-			ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);
+			ERR("sqlite3_exec: %s: %s", SQL, errmsg);
 		return;
 	}	
 
@@ -836,7 +835,7 @@ int kdata2_init(
 		// realloc tables
 		void *p = realloc(tables, tcount * 8 + 8);
 		if (!p) {
-			ERR("%s", "can't realloc tables");	
+			ERR("can't realloc tables with size: %d", tcount * 8 + 8);	
 			break;
 		}
 		tables = p;
@@ -908,7 +907,7 @@ int kdata2_init(
 		/* run SQL command */
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
+			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 			return -1;
 		}
 		
@@ -916,12 +915,12 @@ int kdata2_init(
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN uuid TEXT;", tab->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
-			ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
+			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", tab->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
-			ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
+			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 
 	}
 
@@ -941,7 +940,7 @@ int kdata2_init(
 	/* run SQL command */
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}
 
@@ -993,7 +992,7 @@ int kdata2_set_number_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}
 
@@ -1010,7 +1009,7 @@ int kdata2_set_number_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}
 
@@ -1052,7 +1051,7 @@ int kdata2_set_text_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}
 
@@ -1069,7 +1068,7 @@ int kdata2_set_text_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}
 	
@@ -1117,7 +1116,7 @@ int kdata2_set_data_for_uuid(
 	);	
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}	
 
@@ -1125,7 +1124,7 @@ int kdata2_set_data_for_uuid(
 	
 	sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_exec: %s, for SQL request: %s", sqlite3_errmsg(d->db), SQL);	
+		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db));	
 		return -1;
 	}	
 
@@ -1155,7 +1154,7 @@ int kdata2_set_data_for_uuid(
 	);
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}	
 
@@ -1179,7 +1178,7 @@ int kdata2_remove_for_uuid(
 
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}	
 
@@ -1196,7 +1195,7 @@ int kdata2_remove_for_uuid(
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s, for SQL request: %s", errmsg, SQL);	
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
 		return -1;
 	}	
 	
@@ -1233,7 +1232,7 @@ void kdata2_get(
 	char *SQL = STR("SELECT * FROM '%s' %s", tablename, predicate);
 	res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_prepare_v2 error %s, for SQL request: %s", sqlite3_errmsg(d->db), SQL);
+		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db));	
 		return;
 	}	
 
