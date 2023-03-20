@@ -16,7 +16,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "Users/kuzmich/src/stroybat/kdata2/log.h"
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
 #include "cYandexDisk/uuid4.h"
