@@ -22,6 +22,7 @@ add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 
 if(WIN32 OR ANDROID)
 	SET(SQLITE_SRC sqlite3.c)
+	INCLUDE_DIRECTORIES(${KDATA2_SOURCE_DIR}/.)
 else()
 	LIST(APPEND ADDLIBS sqlite3)
 endif()

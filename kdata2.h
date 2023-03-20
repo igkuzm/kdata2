@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 19.03.2023
+ * Last Modified Date: 20.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -20,7 +20,7 @@ extern "C" {
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#include "sqlite3.h"
+#include <sqlite3.h>
 
 #define DATABASE  "kdata_database"
 #define DELETED   "kdata_deleted"
