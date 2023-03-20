@@ -823,8 +823,8 @@ int kdata2_init(
 	} 
 
 	/* allocate and fill tables array */
-	struct kdata2_table **tables = malloc(8);
-	if (!tables){
+	d->tables = malloc(8);
+	if (!d->tables){
 		ERR("%s", "can't allocate kdata2_t_table");	
 		return -1;
 	}	
@@ -840,47 +840,45 @@ int kdata2_init(
 
 	//iterate va_args
 	while (table){
-		LOG("TABLE: %s", table->tablename);
 		// add table to tables
-		tables[tcount++] = table;
+		d->tables[tcount++] = table;
+
+		LOG("TABLE: %s", table->tablename);
 		
 		// realloc tables
-		void *p = realloc(tables, tcount * 8 + 8);
+		void *p = realloc(d->tables, tcount * 8 + 8);
 		if (!p) {
 			ERR("can't realloc tables with size: %d", tcount * 8 + 8);	
 			break;
 		}
-		tables = p;
+		d->tables = p;
 
 		// iterate
 		table = va_arg(args, struct kdata2_table *);
 	}	
 	/* NULL-terminate tables array */
-	tables[tcount] = NULL;
-
-	/* set tables */
-	d->tables = tables;
+	d->tables[tcount] = NULL;
 
 	/* fill SQL string with data and update tables in memory*/
-	struct kdata2_table ** tab_ptr = d->tables; // pointer to iterate
-	while (*tab_ptr) {
+	struct kdata2_table ** tables = d->tables; // pointer to iterate
+	while (*tables) {
 
 		/* create SQL string */
 		char SQL[BUFSIZ] = "";
 
 		/* for each table in dataset */
-		struct kdata2_table *tab = *tab_ptr++;
+		struct kdata2_table *table = *tables++;
 		
 		/* check if columns exists */
-		if (!tab->columns)
+		if (!table->columns)
 			continue;
 
 		/* check if name exists */
-		if (tab->tablename[0] == 0)
+		if (table->tablename[0] == 0)
 			continue;
 
 		/* add to SQL string */
-		struct kdata2_column ** col_ptr = tab->columns; // pointer to iterate
+		struct kdata2_column ** col_ptr = table->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
 			struct kdata2_column *col = *col_ptr++;
