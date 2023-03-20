@@ -1381,7 +1381,6 @@ void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
 	if (!columnname)
 		return;
 
-	LOG("add columns for table: %s", tablename);
 	//iterate va_args
 	int i = 0;
 	while (type != KDATA2_TYPE_NULL && columnname != NULL){
@@ -1401,8 +1400,6 @@ void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
 		/* add column to array */
 		columns[i++] = new;
 
-		LOG("column: %s", new->columnname);
-		
 		//realloc columns array
 		void *p = realloc(columns, i * 8 + 8);
 		if (!p){
@@ -1422,4 +1419,11 @@ void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
 	columns[i] = NULL;
 
 	t[0]->columns = columns;
+	
+	LOG("add columns for table: %s", tablename);
+	struct kdata2_column ** ptr = t[0]->columns;
+	while (*ptr){
+		struct kdata2_column *c = *ptr++;	
+		LOG("column: %s", c->columnname);
+	}
 }
