@@ -838,6 +838,8 @@ int kdata2_init(
 	if (!table)
 		return -1;
 
+	LOG("TABLE: %s", table->tablename);
+
 	//iterate va_args
 	while (table){
 		// add table to tables
