@@ -1419,11 +1419,4 @@ void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
 	columns[i] = NULL;
 
 	t[0]->columns = columns;
-	
-	LOG("add columns for table: %s", tablename);
-	struct kdata2_column ** ptr = t[0]->columns;
-	while (*ptr){
-		struct kdata2_column *c = *ptr++;	
-		LOG("column: %s", c->columnname);
-	}
 }
