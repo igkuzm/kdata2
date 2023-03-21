@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 20.03.2023
+ * Last Modified Date: 21.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -105,16 +105,15 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	
 	/* get uploaded file*/
 	c_yd_file_t file;
-	c_yandex_disk_file_info(update->d->access_token, 
-			STR("app:/%s/%s", DATABASE, update->uuid), &file, &errmsg);
-
-	if(errmsg)
-		ERR("%s\n", errmsg);
-
-	if (!file.name[0]) {
+	if (c_yandex_disk_file_info(update->d->access_token, 
+				STR("app:/%s/%s", DATABASE, update->uuid), &file, &errmsg))
+	{
+		if(errmsg)
+			ERR("%s\n", errmsg);
+		
 		ERR("%s", "can't get file");
 		return -1;
-	}
+	};
 
 	/* set timestamp */
 	update->timestamp = file.modified;
@@ -597,11 +596,16 @@ _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 }
 
 static int 
-_for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char * error){
+_for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, char * error){
 	if (error){
 		ERR("%s", error);
 		return 0;
 	}
+
+	if (!file){
+		ERR("%s", "file is NULL");
+		return -1;
+	}	
 	
 	kdata2_t *d = user_data;
 
@@ -621,7 +625,7 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 		sqlite3_stmt *stmt;
 		
 		char *SQL = STR("SELECT timestamp FROM '%s' WHERE uuid = '%s'", 
-							table->tablename, file.name);
+							table->tablename, file->name);
 		
 		int res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 		if (res != SQLITE_OK) {
@@ -638,9 +642,9 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 		if (timestamp){
 			data_exists = true;
 			/* compare timestamps */
-			if (file.modified > timestamp){
+			if (file->modified > timestamp){
 				/* download data from remote YandexDisk to local database */
-				_download_from_YandexDisk_to_local_database(d, &file);
+				_download_from_YandexDisk_to_local_database(d, file);
 			}
 		}
 	}
@@ -648,17 +652,22 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t file, void * user_data, char *
 	/* download data from YandexDisk if local data doesn't exists */
 	if (!data_exists) {
 		/* download data from remote YandexDisk to local database */
-		_download_from_YandexDisk_to_local_database(d, &file);
+		_download_from_YandexDisk_to_local_database(d, file);
 	}
 	
 	return 0;
 }
 
 static int 
-_for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * error){
+_for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, char * error){
 	if (error){
 		ERR("%s", error);
 		return 0;
+	}
+
+	if (!file){
+		ERR("%s", "file is NULL");
+		return -1;
 	}
 
 	kdata2_t *d = user_data;
@@ -674,7 +683,7 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t file, void * user_data, char * 
 	
 		/* remove data from SQLite database */
 		char *errmsg = NULL;
-		char *SQL = STR("DELETE FROM '%s' WHERE uuid = '%s'", table->tablename, file.name);
+		char *SQL = STR("DELETE FROM '%s' WHERE uuid = '%s'", table->tablename, file->name);
 		
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
@@ -701,8 +710,7 @@ static void _yd_update(kdata2_t *d){
 	char *errmsg = NULL;
 
 	/* check Yandex Disk Connection */
-	c_yd_file_t file;
-	if (c_yandex_disk_file_info(d->access_token, "app:/", &file, &errmsg)){
+	if (c_yandex_disk_file_info(d->access_token, "app:/", NULL, &errmsg)){
 			ERR("%s", "can't connect to Yandex Disk");
 		return;
 	}	
