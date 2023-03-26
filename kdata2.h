@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 20.03.2023
+ * Last Modified Date: 27.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -46,7 +46,7 @@ struct kdata2_table {
 };
 
 /* allocate table structure with allocated columns; va_args: type, columnname, ... NULL */
-void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...); 
+void kdata2_table_init(struct kdata2_table **t, const char * tablename, ...); 
 
 /* this is kdata2 database */
 typedef struct kdata2 {

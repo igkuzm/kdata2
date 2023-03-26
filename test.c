@@ -2,7 +2,7 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 18.03.2023
+ * Last Modified Date: 27.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -36,19 +36,12 @@ int main(int argc, char *argv[])
 {
 	printf("kdata2 test start...\n");
 	
-	struct kdata2_col name      = {KDATA2_TYPE_TEXT,   "name" };
-	struct kdata2_col date      = {KDATA2_TYPE_NUMBER, "date" };
-	struct kdata2_col photo     = {KDATA2_TYPE_DATA,   "photo"};
-
-	struct kdata2_col_t *cols[]   = {&name, &date, &photo, NULL };
-
-	struct kdata2_tab pers      = {"pers", cols};
-
-	struct kdata2_tab *tables[] = {&pers, NULL};
+	struct kdata2_table *t;
+	kdata2_table_init(&t, "pers", KDATA2_TYPE_TEXT,   "name", KDATA2_TYPE_NUMBER, "date", KDATA2_TYPE_DATA,   "photo", NULL); 
 
 	printf("kdata2 init database...\t");
 	kdata2_t *database;
-	kdata2_init(&database, "database.db", "", tables, 300);
+	kdata2_init(&database, "database.db", "", 10, t, NULL);
 	printf("OK\n");
 
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";

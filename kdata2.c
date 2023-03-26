@@ -822,11 +822,18 @@ int kdata2_init(
 	int err = 0;
 	char *errmsg = NULL;
 	
-	/* allocate kdata2_t */
+	/* check filepath */
+	if (!filepath){
+		ERR("%s", "filepath is NULL");	
+		return -1;
+	}
+
+	/* check database pointer */
 	if (!database){
 		ERR("%s", "database pointer is NULL");	
 		return -1;
 	}
+	/* allocate kdata2_t */
 	kdata2_t *d = NEW(kdata2_t);
 	if (!d){
 		ERR("%s", "kdata2_init: can't allocate kdata2_t *database");	
@@ -837,11 +844,6 @@ int kdata2_init(
 	/* set data attributes */
 	d->sec = sec;
 
-	/* check filepath */
-	if (!filepath){
-		ERR("%s", "filepath is NULL");	
-		return -1;
-	}
 	strncpy(d->filepath, filepath, BUFSIZ-1);
 	d->filepath[BUFSIZ-1] = 0;
 	
@@ -1374,7 +1376,7 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 	return 0;
 }
 
-void kdata2_table_new(struct kdata2_table **t, const char * tablename, ...){
+void kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	// check table pointer
 	if (!t){
 		ERR("%s", "table pointer is NULL");
