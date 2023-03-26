@@ -1376,25 +1376,25 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 	return 0;
 }
 
-void kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
+int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	// check table pointer
 	if (!t){
 		ERR("%s", "table pointer is NULL");
-		return;
+		return -1;
 	}
 	
 	/* allocate new table */
 	*t = NEW(struct kdata2_table);
 	if (!*t){
 		ERR("%s", "can't allocate memory for struct kdata2_tab");
-		return;
+		return -1;
 	}
 	
 	// pointer to collumns
 	struct kdata2_column **columns = malloc(8);
 	if (!columns){
 		ERR("%s", "can't allocate memory for columns array");
-		return;
+		return -1;
 	}
 
 	/* set tables attributes */
@@ -1408,11 +1408,11 @@ void kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 
 	enum KDATA2_TYPE type = va_arg(args, enum KDATA2_TYPE);
 	if (type == KDATA2_TYPE_NULL)
-		return;
+		return -1;
 
 	char * columnname = va_arg(args, char *);
 	if (!columnname)
-		return;
+		return -1;
 
 	//iterate va_args
 	int i = 0;
@@ -1452,4 +1452,6 @@ void kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	columns[i] = NULL;
 
 	t[0]->columns = columns;
+	
+	return 0;
 }

@@ -46,7 +46,7 @@ struct kdata2_table {
 };
 
 /* allocate table structure with allocated columns; va_args: type, columnname, ... NULL */
-void kdata2_table_init(struct kdata2_table **t, const char * tablename, ...); 
+int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...); 
 
 /* this is kdata2 database */
 typedef struct kdata2 {
