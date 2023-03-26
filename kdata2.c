@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 21.03.2023
+ * Last Modified Date: 26.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -101,6 +101,32 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	if (update->data_to_free)
 		free(update->data_to_free);
 
+	/* Need to check if timestamp of current update is equal to update in SQLite table */
+	/* if it is - remove from update table */
+
+	/* get timestamp from sqlite table */
+	sqlite3_stmt *stmt;
+	
+	char *SQL = STR("SELECT timestamp FROM '%s' WHERE uuid = '%s'", 
+						update->table, update->uuid);
+	
+	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
+	if (res != SQLITE_OK) {
+		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db));
+		return -1;
+	}	
+
+	time_t timestamp = 0;
+	while (sqlite3_step(stmt) != SQLITE_DONE)
+		timestamp = sqlite3_column_int64(stmt, 0);
+
+	sqlite3_finalize(stmt);	
+
+	/* check timestamp */
+	if (timestamp > update->timestamp)
+		return 1; // need to update again - don't remove from update table
+
+	/* otherwice -> remove from update table and set new timestamp from uploaded file */
 	char *errmsg = NULL;
 	
 	/* get uploaded file*/
@@ -119,9 +145,7 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	update->timestamp = file.modified;
 
 	/* remove local update and sync timestamps */
-	_remove_local_update(update, NULL);
-
-	return 0;
+	return _remove_local_update(update, NULL);
 }
 
 static void 
