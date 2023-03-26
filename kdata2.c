@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 26.03.2023
+ * Last Modified Date: 27.03.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -71,15 +71,6 @@ _remove_local_update(void *user_data, char *error){
 		return -1;
 	}	
 
-	/* set new timestamp for data */
-	SQL = STR("UPDATE '%s' SET timestamp = %ld WHERE uuid = '%s'", 
-					update->table, update->timestamp, update->uuid); 
-	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
-	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
-		return -1;
-	}		
-
 	/* free struct update */
 	free(update);
 	return 0;
@@ -141,10 +132,18 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 		return -1;
 	};
 
-	/* set timestamp */
-	update->timestamp = file.modified;
+	/* set new timestamp to sqlite data */
+	if (timestamp < file.modified){
+		SQL = STR("UPDATE '%s' SET timestamp = %ld WHERE uuid = '%s'", 
+						update->table, file.modified, update->uuid); 
+		sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
+		if (errmsg){
+			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+			return -1;
+		}		
+	}
 
-	/* remove local update and sync timestamps */
+	/* remove local update */
 	return _remove_local_update(update, NULL);
 }
 
