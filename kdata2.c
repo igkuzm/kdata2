@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 27.03.2023
+ * Last Modified Date: 17.04.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -64,7 +64,7 @@ _remove_local_update(void *user_data, char *error){
 	char *SQL;
 
 	/* remove from local update table */
-	SQL = STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", update->uuid); 
+	SQL = STR("DELETE FROM _kdata2_updates WHERE %s = '%s'", UUIDCOLUMN, update->uuid); 
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
 		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
@@ -98,8 +98,8 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	/* get timestamp from sqlite table */
 	sqlite3_stmt *stmt;
 	
-	char *SQL = STR("SELECT timestamp FROM '%s' WHERE uuid = '%s'", 
-						update->table, update->uuid);
+	char *SQL = STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
+						update->table, UUIDCOLUMN, update->uuid);
 	
 	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
@@ -134,8 +134,8 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 
 	/* set new timestamp to sqlite data */
 	if (timestamp < file.modified){
-		SQL = STR("UPDATE '%s' SET timestamp = %ld WHERE uuid = '%s'", 
-						update->table, file.modified, update->uuid); 
+		SQL = STR("UPDATE '%s' SET timestamp = %ld WHERE %s = '%s'", 
+						update->table, file.modified, UUIDCOLUMN, update->uuid); 
 		sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
 			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
@@ -182,7 +182,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	char *errmsg = NULL;
 	sqlite3_stmt *stmt;
 	
-	char *SQL = STR("SELECT * FROM '%s' WHERE uuid = '%s'", update->table, update->uuid);
+	char *SQL = STR("SELECT * FROM '%s' WHERE %s = '%s'", update->table, UUIDCOLUMN, update->uuid);
 	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
 		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db));
@@ -440,7 +440,7 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 
 	/* update local database */
 	snprintf(SQL, size + BUFSIZ-1,
-			"UPDATE '%s' SET '%s' = '%s' WHERE uuid = '%s'", update->table, 
+			"UPDATE '%s' SET '%s' = '%s' WHERE %s = '%s'", update->table, UUIDCOLUMN, 
 					update->column, 
 							(char*)data, update->uuid		
 	);
@@ -509,13 +509,13 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE uuid = '%s'); "
-			"UPDATE '%s' SET timestamp = %ld WHERE uuid = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
+			"UPDATE '%s' SET timestamp = %ld WHERE %s = '%s'"
 			,
 			update->table,
 			update->uuid,
-			update->table, update->uuid,
-			update->table, update->timestamp, update->uuid		
+			update->table, UUIDCOLUMN, update->uuid,
+			update->table, update->timestamp, UUIDCOLUMN, update->uuid		
 	);
 
 	char *errmsg = NULL;
@@ -559,9 +559,9 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 			}		
 			if (cJSON_GetNumberValue(type) == KDATA2_TYPE_NUMBER){
 				snprintf(SQL, BUFSIZ-1,
-						"UPDATE '%s' SET '%s' = %ld WHERE uuid = '%s'", update->table, 
+						"UPDATE '%s' SET '%s' = %ld WHERE %s = '%s'", update->table, 
 								cJSON_GetStringValue(name), 
-										(long)cJSON_GetNumberValue(value), update->uuid		
+										(long)cJSON_GetNumberValue(value), UUIDCOLUMN, update->uuid		
 				);
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
@@ -569,9 +569,9 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 				}
 			} else {
 				snprintf(SQL, BUFSIZ-1,
-						"UPDATE '%s' SET '%s' = '%s' WHERE uuid = '%s'", update->table, 
+						"UPDATE '%s' SET '%s' = '%s' WHERE %s = '%s'", update->table, 
 								cJSON_GetStringValue(name), 
-										cJSON_GetStringValue(value), update->uuid		
+										cJSON_GetStringValue(value), UUIDCOLUMN, update->uuid		
 				);				
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
@@ -647,8 +647,8 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, char 
 	
 		sqlite3_stmt *stmt;
 		
-		char *SQL = STR("SELECT timestamp FROM '%s' WHERE uuid = '%s'", 
-							table->tablename, file->name);
+		char *SQL = STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
+							table->tablename, UUIDCOLUMN, file->name);
 		
 		int res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 		if (res != SQLITE_OK) {
@@ -706,7 +706,7 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, char *
 	
 		/* remove data from SQLite database */
 		char *errmsg = NULL;
-		char *SQL = STR("DELETE FROM '%s' WHERE uuid = '%s'", table->tablename, file->name);
+		char *SQL = STR("DELETE FROM '%s' WHERE %s = '%s'", table->tablename, UUIDCOLUMN, file->name);
 		
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
@@ -1026,13 +1026,13 @@ int kdata2_set_number_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE uuid = '%s'); "
-			"UPDATE '%s' SET timestamp = %ld, '%s' = %ld WHERE uuid = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
+			"UPDATE '%s' SET timestamp = %ld, '%s' = %ld WHERE %s = '%s'"
 			,
 			tablename,
 			uuid,
-			tablename, uuid,
-			tablename, timestamp, column, number, uuid		
+			tablename, UUIDCOLUMN, uuid,
+			tablename, timestamp, column, number, UUIDCOLUMN, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1044,12 +1044,12 @@ int kdata2_set_number_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE uuid = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
 			,
 			uuid,
-			uuid,
-			timestamp, tablename, uuid		
+			UUIDCOLUMN, uuid,
+			timestamp, tablename, UUIDCOLUMN, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1085,13 +1085,13 @@ int kdata2_set_text_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE uuid = '%s'); "
-			"UPDATE '%s' SET timestamp = %ld, '%s' = '%s' WHERE uuid = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
+			"UPDATE '%s' SET timestamp = %ld, '%s' = '%s' WHERE %s = '%s'"
 			,
 			tablename,
 			uuid,
-			tablename, uuid,
-			tablename, timestamp, column, text, uuid		
+			tablename, UUIDCOLUMN, uuid,
+			tablename, timestamp, column, text, UUIDCOLUMN, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1103,12 +1103,12 @@ int kdata2_set_text_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE uuid = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
 			,
 			uuid,
-			uuid,
-			timestamp, tablename, uuid		
+			UUIDCOLUMN, uuid,
+			timestamp, tablename, UUIDCOLUMN, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1153,10 +1153,10 @@ int kdata2_set_data_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE uuid = '%s'); ",
+			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); ",
 			tablename,
 			uuid,
-			tablename, uuid
+			tablename, UUIDCOLUMN, uuid
 	);	
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
@@ -1164,7 +1164,7 @@ int kdata2_set_data_for_uuid(
 		return -1;
 	}	
 
-	sprintf(SQL, "UPDATE '%s' SET '%s' = (?) WHERE uuid = '%s'", tablename, column, uuid);
+	sprintf(SQL, "UPDATE '%s' SET '%s' = (?) WHERE %s = '%s'", tablename, column, UUIDCOLUMN, uuid);
 	
 	sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
@@ -1189,12 +1189,12 @@ int kdata2_set_data_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE uuid = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
 			,
 			uuid,
-			uuid,
-			timestamp, tablename, uuid		
+			UUIDCOLUMN, uuid,
+			timestamp, tablename, UUIDCOLUMN, uuid		
 	);
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
@@ -1218,7 +1218,7 @@ int kdata2_remove_for_uuid(
 	char *errmsg = NULL;
 	
 	char SQL[BUFSIZ];
-	snprintf(SQL, BUFSIZ-1, "DELETE FROM '%s' WHERE uuid = '%s'", tablename, uuid);	
+	snprintf(SQL, BUFSIZ-1, "DELETE FROM '%s' WHERE %s = '%s'", tablename, UUIDCOLUMN, uuid);	
 
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1230,12 +1230,12 @@ int kdata2_remove_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 1 WHERE uuid = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 1 WHERE %s = '%s'"
 			,
 			uuid,
-			uuid,
-			time(NULL), tablename, uuid		
+			UUIDCOLUMN, uuid,
+			time(NULL), tablename, UUIDCOLUMN, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
