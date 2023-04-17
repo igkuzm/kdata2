@@ -32,9 +32,10 @@ extern "C" {
 
 enum KDATA2_TYPE {
 	KDATA2_TYPE_NULL,         
-	KDATA2_TYPE_NUMBER,        // SQLite INT 
+	KDATA2_TYPE_NUMBER,        // SQLite INTEGER 
 	KDATA2_TYPE_TEXT,		   // SQLite TEXT
-	KDATA2_TYPE_DATA		   // SQLite BLOB - to store binary data
+	KDATA2_TYPE_DATA,		   // SQLite BLOB - to store binary data
+	KDATA2_TYPE_FLOAT          // SQLite REAL 
 };
 
 /* this is data column */
@@ -84,6 +85,14 @@ int kdata2_set_number_for_uuid(
 		long number, 
 		const char *uuid);
 
+/* set number for data entity with uuid; set uuid to NULL to create new */
+int kdata2_set_float_for_uuid(
+		kdata2_t * database, 
+		const char *tablename, 
+		const char *column, 
+		double number, 
+		const char *uuid);
+
 /* set text for data entity with uuid; set uuid to NULL to create new */
 int kdata2_set_text_for_uuid(
 		kdata2_t * database, 
@@ -110,8 +119,7 @@ int kdata2_remove_for_uuid(
 /* get entities for table; set predicate to "WHERE uuid = 'uuid'" to get with uuid */
 void kdata2_get(
 		kdata2_t * database, 
-		const char *tablename, 
-		const char *predicate,
+		const char *SQL,
 		void *user_data,
 		int (*callback)(
 			void *user_data,

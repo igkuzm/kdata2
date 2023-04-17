@@ -204,6 +204,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 			switch (col_type) {
 				case SQLITE_BLOB:    type = KDATA2_TYPE_DATA;   break;
 				case SQLITE_INTEGER: type = KDATA2_TYPE_NUMBER; break;
+				case SQLITE_FLOAT:   type = KDATA2_TYPE_FLOAT;  break;
 				
 				default: type = KDATA2_TYPE_TEXT; break;
 			}
@@ -288,10 +289,13 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 
 					/* free buf */
 					free(buf);
-				} else{
+				} else if (type == KDATA2_TYPE_NUMBER){
 					long number = sqlite3_column_int64(stmt, i);					
 					cJSON_AddItemToObject(column, "value", cJSON_CreateNumber(number));
-				}
+				} else if (type == KDATA2_TYPE_FLOAT){
+					double number = sqlite3_column_double(stmt, i);					
+					cJSON_AddItemToObject(column, "value", cJSON_CreateNumber(number));
+				}				
 			}
 			
 			cJSON_AddItemToArray(columns, column);
@@ -562,6 +566,16 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 						"UPDATE '%s' SET '%s' = %ld WHERE %s = '%s'", update->table, 
 								cJSON_GetStringValue(name), 
 										(long)cJSON_GetNumberValue(value), UUIDCOLUMN, update->uuid		
+				);
+				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
+				if (errmsg){
+					ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+				}
+			} else if (cJSON_GetNumberValue(type) == KDATA2_TYPE_FLOAT){
+				snprintf(SQL, BUFSIZ-1,
+						"UPDATE '%s' SET '%s' = %lf WHERE %s = '%s'", update->table, 
+								cJSON_GetStringValue(name), 
+										(double)cJSON_GetNumberValue(value), UUIDCOLUMN, update->uuid		
 				);
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
@@ -937,6 +951,8 @@ int kdata2_init(
 					strcat(SQL, "TEXT"); break;
 				case KDATA2_TYPE_DATA:
 					strcat(SQL, "BLOB"); break;
+				case KDATA2_TYPE_FLOAT:
+					strcat(SQL, "REAL"); break;
 				default: continue;
 			}
 
@@ -1028,6 +1044,65 @@ int kdata2_set_number_for_uuid(
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
 			"UPDATE '%s' SET timestamp = %ld, '%s' = %ld WHERE %s = '%s'"
+			,
+			tablename,
+			uuid,
+			tablename, UUIDCOLUMN, uuid,
+			tablename, timestamp, column, number, UUIDCOLUMN, uuid		
+	);
+	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
+	if (errmsg){
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		return -1;
+	}
+
+	/* update update table */
+	snprintf(SQL, BUFSIZ-1,
+			"INSERT INTO _kdata2_updates (uuid) "
+			"SELECT '%s' "
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
+			,
+			uuid,
+			UUIDCOLUMN, uuid,
+			timestamp, tablename, UUIDCOLUMN, uuid		
+	);
+	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
+	if (errmsg){
+		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		return -1;
+	}
+
+	return 0;
+}
+
+int kdata2_set_float_for_uuid(
+		kdata2_t * d, 
+		const char *tablename, 
+		const char *column, 
+		double number, 
+		const char *uuid)
+{
+	if (!uuid){
+		char _uuid[37];
+		if (uuid_new(_uuid)){
+			ERR("%s", "can't generate uuid");
+			return -1;
+		}
+		uuid = _uuid;
+	}
+
+	char *errmsg = NULL;
+
+	time_t timestamp = time(NULL);
+
+	/* update database */
+	char SQL[BUFSIZ];
+	snprintf(SQL, BUFSIZ-1,
+			"INSERT INTO '%s' (uuid) "
+			"SELECT '%s' "
+			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
+			"UPDATE '%s' SET timestamp = %ld, '%s' = %lf WHERE %s = '%s'"
 			,
 			tablename,
 			uuid,
@@ -1248,8 +1323,7 @@ int kdata2_remove_for_uuid(
 
 void kdata2_get(
 		kdata2_t *d, 
-		const char *tablename, 
-		const char *predicate,
+		const char *SQL, 
 		void *user_data,
 		int (*callback)(
 			void *user_data,
@@ -1260,9 +1334,11 @@ void kdata2_get(
 			)
 		)
 {
-	if (!predicate)
-		predicate = "";
-
+	if (!SQL){
+		ERR("%s", "ERROR! kdata2_get: SQL is NULL\n");
+		return;
+	}
+	
 	if (!callback){
 		ERR("%s", "ERROR! kdata2_get: callback is NULL\n");
 		return;
@@ -1273,7 +1349,6 @@ void kdata2_get(
 	char *errmsg = NULL;
 	sqlite3_stmt *stmt;
 	
-	char *SQL = STR("SELECT * FROM '%s' %s", tablename, predicate);
 	res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
 		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db));	
@@ -1293,6 +1368,7 @@ void kdata2_get(
 			switch (col_type) {
 				case SQLITE_BLOB:    type = KDATA2_TYPE_DATA;   break;
 				case SQLITE_INTEGER: type = KDATA2_TYPE_NUMBER; break;
+				case SQLITE_FLOAT:   type = KDATA2_TYPE_FLOAT;  break;
 				
 				default: type = KDATA2_TYPE_TEXT; break;
 			}
@@ -1309,6 +1385,13 @@ void kdata2_get(
 					
 					break;							 
 				} 
+				case KDATA2_TYPE_FLOAT: {
+					double number = sqlite3_column_double(stmt, i);
+					if (callback(user_data, type, title, &number, 1))
+						return;
+					
+					break;							 
+				}										 
 				case KDATA2_TYPE_TEXT: {
 					size_t len = sqlite3_column_bytes(stmt, i); 
 					const unsigned char *value = sqlite3_column_text(stmt, i);
