@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 17.04.2023
+ * Last Modified Date: 23.04.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -47,7 +47,7 @@ int uuid_new(char uuid[37]){
 	return 0;
 }
 
-static int 
+int 
 _remove_local_update(void *user_data, char *error){
 	struct kdata2_update *update = user_data;
 	if (!update){
@@ -76,7 +76,7 @@ _remove_local_update(void *user_data, char *error){
 	return 0;
 }
 
-static int 
+int 
 _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	struct kdata2_update *update = user_data;
 
@@ -147,7 +147,7 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	return _remove_local_update(update, NULL);
 }
 
-static void 
+void 
 _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	/*
 	 * 1. get data from SQLite
@@ -318,7 +318,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	cJSON_free(json);
 }
 
-static int 
+int 
 _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles){
 
 	kdata2_t *d = user_data;
@@ -417,7 +417,7 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 	return 0;
 }
 
-static int 
+int 
 _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, char *error){
 	/* handle error */
 	if (error)
@@ -461,7 +461,7 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	return 0;
 }
 
-static int 
+int 
 _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, char *error){
 	/* handle error */
 	if (error)
@@ -605,7 +605,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 } 
 
 
-static void
+void
 _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 	/*
 	 * 1. get json data
@@ -695,7 +695,7 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, char 
 	return 0;
 }
 
-static int 
+int 
 _for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, char * error){
 	if (error){
 		ERR("%s", error);
@@ -731,7 +731,7 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, char *
 	return 0;
 }
 
-static void _yd_update(kdata2_t *d){
+void _yd_update(kdata2_t *d){
 	/*
 	 * To update data:
 	 * 1. get list of updates in update and deleted table in local database with timestamps
@@ -794,7 +794,7 @@ static void * _yd_thread(void * data){
 	pthread_exit(0);	
 }
 
-static void _yd_daemon_init(kdata2_t * d){
+void _yd_daemon_init(kdata2_t * d){
 	int err;
 
 	//pthread_t tid; //thread id
