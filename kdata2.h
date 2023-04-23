@@ -64,7 +64,7 @@ typedef struct kdata2 {
 } kdata2_t;
 
 /* init function */
-static int 
+int 
 kdata2_init(
 		kdata2_t     ** database,     // pointer to kdata2_t
 		const char    * filepath,     // file path to where store SQLite data
@@ -73,14 +73,14 @@ kdata2_init(
 		...							  // kdata2_table, NULL
 );
 /* set access_token */
-static int 
+int 
 kdata2_set_access_token(kdata2_t * database, const char *access_token);
 
 /* close database and free memory */
 int kdata2_close(kdata2_t *dataset);
 
 /* set number for data entity with uuid; set uuid to NULL to create new */
-static int 
+int 
 kdata2_set_number_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -89,7 +89,7 @@ kdata2_set_number_for_uuid(
 		const char *uuid);
 
 /* set number for data entity with uuid; set uuid to NULL to create new */
-static int 
+int 
 kdata2_set_float_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -98,7 +98,7 @@ kdata2_set_float_for_uuid(
 		const char *uuid);
 
 /* set text for data entity with uuid; set uuid to NULL to create new */
-static int 
+int 
 kdata2_set_text_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -107,7 +107,7 @@ kdata2_set_text_for_uuid(
 		const char *uuid);
 
 /* set data for data entity with uuid; set uuid to NULL to create new */
-static int 
+int 
 kdata2_set_data_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -117,14 +117,14 @@ kdata2_set_data_for_uuid(
 		const char *uuid);
 
 /* remove data entity with uuid */
-static int 
+int 
 kdata2_remove_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
 		const char *uuid);
 
 /* get entities for table; set predicate to "WHERE uuid = 'uuid'" to get with uuid */
-static void 
+void 
 kdata2_get(
 		kdata2_t * database, 
 		const char *SQL,
@@ -139,7 +139,7 @@ kdata2_get(
 		);
 
 /* init Yandex Disk */
-static void _yd_daemon_init(kdata2_t * d);
+void _yd_daemon_init(kdata2_t * d);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */
