@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 23.04.2023
+ * Last Modified Date: 02.05.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -23,7 +23,7 @@ extern "C" {
 #include "sqlite3.h"
 
 #ifndef UUIDCOLUMN
-#define UUIDCOLUMN "uuid"
+#define UUIDCOLUMN "ZRECORDNAME"
 #endif /* ifndef UUIDCOLUMN */
 
 #define DATABASE  "kdata_database"

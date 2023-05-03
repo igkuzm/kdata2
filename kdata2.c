@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 23.04.2023
+ * Last Modified Date: 03.05.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -511,12 +511,12 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	/* udate local database */
 	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
-			"INSERT INTO '%s' (uuid) "
+			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
 			"UPDATE '%s' SET timestamp = %ld WHERE %s = '%s'"
 			,
-			update->table,
+			update->table, UUIDCOLUMN,
 			update->uuid,
 			update->table, UUIDCOLUMN, update->uuid,
 			update->table, update->timestamp, UUIDCOLUMN, update->uuid		
@@ -1040,12 +1040,12 @@ int kdata2_set_number_for_uuid(
 	/* update database */
 	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
-			"INSERT INTO '%s' (uuid) "
+			"INSERT INTO '%s' %s "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
 			"UPDATE '%s' SET timestamp = %ld, '%s' = %ld WHERE %s = '%s'"
 			,
-			tablename,
+			tablename, UUIDCOLUMN,
 			uuid,
 			tablename, UUIDCOLUMN, uuid,
 			tablename, timestamp, column, number, UUIDCOLUMN, uuid		
@@ -1060,12 +1060,12 @@ int kdata2_set_number_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE uuid = '%s'"
 			,
 			uuid,
-			UUIDCOLUMN, uuid,
-			timestamp, tablename, UUIDCOLUMN, uuid		
+			uuid,
+			timestamp, tablename, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1099,12 +1099,12 @@ int kdata2_set_float_for_uuid(
 	/* update database */
 	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
-			"INSERT INTO '%s' (uuid) "
+			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
 			"UPDATE '%s' SET timestamp = %ld, '%s' = %lf WHERE %s = '%s'"
 			,
-			tablename,
+			tablename, UUIDCOLUMN,
 			uuid,
 			tablename, UUIDCOLUMN, uuid,
 			tablename, timestamp, column, number, UUIDCOLUMN, uuid		
@@ -1119,12 +1119,12 @@ int kdata2_set_float_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE uuid = '%s'"
 			,
 			uuid,
-			UUIDCOLUMN, uuid,
-			timestamp, tablename, UUIDCOLUMN, uuid		
+			uuid,
+			timestamp, tablename, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1142,6 +1142,7 @@ int kdata2_set_text_for_uuid(
 		const char *text, 
 		const char *uuid)
 {
+	fprintf(stderr, "SET TEXT: %s FOR UUID: %s\n", text, uuid);
 	if (!uuid){
 		char _uuid[37];
 		if (uuid_new(_uuid)){
@@ -1158,16 +1159,17 @@ int kdata2_set_text_for_uuid(
 	/* update database */
 	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
-			"INSERT INTO '%s' (uuid) "
+			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
 			"UPDATE '%s' SET timestamp = %ld, '%s' = '%s' WHERE %s = '%s'"
 			,
-			tablename,
+			tablename, UUIDCOLUMN,
 			uuid,
 			tablename, UUIDCOLUMN, uuid,
 			tablename, timestamp, column, text, UUIDCOLUMN, uuid		
 	);
+	fprintf(stderr, "SQL: %s\n", SQL);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
 		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
@@ -1178,12 +1180,12 @@ int kdata2_set_text_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE uuid = '%s'"
 			,
 			uuid,
-			UUIDCOLUMN, uuid,
-			timestamp, tablename, UUIDCOLUMN, uuid		
+			uuid,
+			timestamp, tablename, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
@@ -1226,10 +1228,10 @@ int kdata2_set_data_for_uuid(
 	
 	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
-			"INSERT INTO '%s' (uuid) "
+			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); ",
-			tablename,
+			tablename, UUIDCOLUMN,
 			uuid,
 			tablename, UUIDCOLUMN, uuid
 	);	
@@ -1264,12 +1266,12 @@ int kdata2_set_data_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE %s = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 0 WHERE uuid = '%s'"
 			,
 			uuid,
-			UUIDCOLUMN, uuid,
-			timestamp, tablename, UUIDCOLUMN, uuid		
+			uuid,
+			timestamp, tablename, uuid		
 	);
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
@@ -1305,12 +1307,12 @@ int kdata2_remove_for_uuid(
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO _kdata2_updates (uuid) "
 			"SELECT '%s' "
-			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE %s = '%s'); "
-			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 1 WHERE %s = '%s'"
+			"WHERE NOT EXISTS (SELECT 1 FROM _kdata2_updates WHERE uuid = '%s'); "
+			"UPDATE _kdata2_updates SET timestamp = %ld, tablename = '%s', deleted = 1 WHERE uuid = '%s'"
 			,
 			uuid,
-			UUIDCOLUMN, uuid,
-			time(NULL), tablename, UUIDCOLUMN, uuid		
+			uuid,
+			time(NULL), tablename, uuid		
 	);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
