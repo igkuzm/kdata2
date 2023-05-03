@@ -1040,7 +1040,7 @@ int kdata2_set_number_for_uuid(
 	/* update database */
 	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
-			"INSERT INTO '%s' %s "
+			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
 			"UPDATE '%s' SET timestamp = %ld, '%s' = %ld WHERE %s = '%s'"
