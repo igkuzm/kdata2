@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 03.05.2023
+ * Last Modified Date: 04.05.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -1169,7 +1169,6 @@ int kdata2_set_text_for_uuid(
 			tablename, UUIDCOLUMN, uuid,
 			tablename, timestamp, column, text, UUIDCOLUMN, uuid		
 	);
-	fprintf(stderr, "SQL: %s\n", SQL);
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
 		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
