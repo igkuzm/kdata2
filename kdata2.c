@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 04.05.2023
+ * Last Modified Date: 05.05.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -937,7 +937,7 @@ int kdata2_init(
 
 			/* each table should have uuid column and timestamp column */
 			/* check if column name is uuid or timestamp */
-			if (strcmp(col->columnname, "uuid") == 0 
+			if (strcmp(col->columnname, UUIDCOLUMN) == 0 
 					|| strcmp(col->columnname, "timestamp") == 0)
 				continue;
 
@@ -972,7 +972,7 @@ int kdata2_init(
 		}
 		
 		/* add columns */
-		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN uuid TEXT;", table->tablename);
+		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN %s TEXT;", table->tablename, UUIDCOLUMN);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg)
 			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
