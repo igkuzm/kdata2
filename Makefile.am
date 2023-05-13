@@ -1,20 +1,25 @@
-#config to create static kdata2 lib with automake
+#config to create kdata2 lib with automake
 
-noinst_LIBRARIES = libkdata2.a
+SUBDIRS = cYandexDisk
 
-libkdata2_a_SOURCES = \
-		kdata2.c kdata2.h \
-		cYandexDisk/cYandexDisk.c\
-	  cYandexDisk/cJSON.c\
-	  cYandexDisk/uuid4.c
+lib_LTLIBRARIES = libkdata2.la
+
+libkdata2_la_SOURCES = \
+		kdata2.c kdata2.h
 
 CURL_LINK =
+SQLITE3_LINK =
+CYD_LINK =
+CYD_OBJ =
 
 if WINDOWS
 	libkdata2_a_SOURCES += sqlite3.c sqlite3.h
+	CYD_LINK = -lcYandexDiak -LcYandexDisk/.libs
 else
-	CURL_LINK += -lcurl
+	SQLITE3_LINK += -lsqlite3
+	CURL_LINK   += -lcurl
+	CYD_OBJ = cYandexDisk/*.o 
 endif
 
 
-libkdata2_a_LIBADD = $(CURL_LINK)
+libkdata2_la_LIBADD = $(CYD_OBJ) $(CURL_LINK) $(SQLITE3_LINK) $(CYD_LINK)
