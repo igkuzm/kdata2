@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 05.05.2023
+ * Last Modified Date: 22.05.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -786,7 +786,7 @@ static void * _yd_thread(void * data){
 	struct kdata2 *d = data; 
 
 	while (1) {
-		LOG("%s", "updating data...");
+		//LOG("%s", "updating data...");
 		_yd_update(d);
 		sleep(d->sec);
 	}
@@ -822,7 +822,7 @@ int kdata2_init(
 		...
 		)
 {
-	LOG("%s", "Start kdata2_init...");	
+	//LOG("%s", "Start kdata2_init...");	
 
 	/*
 	 * For init:
