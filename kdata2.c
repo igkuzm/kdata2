@@ -23,9 +23,9 @@
 
 #define NEW(T)   ({T *new = malloc(sizeof(T)); new;})
 
-#define STR(...)     ({char s[BUFSIZ]; sprintf(s, __VA_ARGS__); s;}) 
+#define STR(...)     ({char s[BUFSIZ]; snprintf(s, BUFSIZ-1, __VA_ARGS__); s;}) 
 #define STR_ERR(...) STR("E/_%s: %s: %s", __FILE__, __func__, STR(__VA_ARGS__))
-#define STR_LOG(...) STR("I/_%s: %s: %s", __FILE__, __func__, STR(__VA_ARGS__))
+#define STR_LOG(...) STR("I/_%ld: %s: %s: %s", time(NULL), __FILE__, __func__, STR(__VA_ARGS__))
 
 struct kdata2_update {
 	char table[128];
@@ -50,7 +50,7 @@ int uuid_new(char uuid[37]){
 }
 
 int 
-_remove_local_update(void *user_data, char *error){
+_remove_local_update(void *user_data, const char *error){
 	struct kdata2_update *update = user_data;
 	if (!update && !update->d)
 		return -1;
@@ -67,6 +67,10 @@ _remove_local_update(void *user_data, char *error){
 
 	/* remove from local update table */
 	SQL = STR("DELETE FROM _kdata2_updates WHERE %s = '%s'", UUIDCOLUMN, update->uuid); 
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("%s", SQL));
+	
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
 		if (update->d->on_error)
@@ -81,13 +85,13 @@ _remove_local_update(void *user_data, char *error){
 }
 
 int 
-_after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
+_after_upload_to_YandexDisk(size_t size, void *user_data, const char *error){
 	struct kdata2_update *update = user_data;
 
 	if (!update && !update->d)
 		return -1;
 
-	if (error){
+	if (error)
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("%s", error));
@@ -104,6 +108,9 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	
 	char *SQL = STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
 						update->table, UUIDCOLUMN, update->uuid);
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("%s", SQL));	
 	
 	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
@@ -127,6 +134,10 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	char *errmsg = NULL;
 	
 	/* get uploaded file*/
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("c_yandex_disk_file_info: app:/%s/%s", DATABASE, update->uuid));	
+
 	c_yd_file_t file;
 	if (c_yandex_disk_file_info(update->d->access_token, 
 				STR("app:/%s/%s", DATABASE, update->uuid), &file, &errmsg))
@@ -146,12 +157,19 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	};
 
 	/* set new timestamp to sqlite data */
+	errmsg = NULL;
 	if (timestamp < file.modified){
 		SQL = STR("UPDATE '%s' SET timestamp = %ld WHERE %s = '%s'", 
 						update->table, file.modified, UUIDCOLUMN, update->uuid); 
+		if (update->d->on_log)
+			update->d->on_log(update->d->on_log_data, 
+					STR_LOG("%s", SQL));		
 		sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+			if (update->d->on_error)
+				update->d->on_error(update->d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+			free(errmsg);			
 			return -1;
 		}		
 	}
@@ -169,26 +187,23 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	 * 4. remove uuid from local update table
 	 */
 
-	if (!update){
-		ERR("%s", "data is NULL");
+	if (!update && !update->d)
 		return;
-	}	
-
-	if (!update->d){
-		ERR("%s", "update->data is NULL");
-		return;
-	}	
 
 	/* create json */
 	cJSON *json = cJSON_CreateObject();
 	if (!json){
-		ERR("%s", "can't cJSON_CreateObject");
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", "can't cJSON_CreateObject"));			
 		return;
 	}
 	cJSON_AddItemToObject(json, "tablename", cJSON_CreateString(update->table));
 	cJSON *columns = cJSON_CreateArray();
 	if (!columns){
-		ERR("can't cJSON_CreateArray for table: %s", update->table);
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("can't cJSON_CreateArray for table: %s", update->table));		
 		return;
 	}	
 
@@ -196,9 +211,15 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	sqlite3_stmt *stmt;
 	
 	char *SQL = STR("SELECT * FROM '%s' WHERE %s = '%s'", update->table, UUIDCOLUMN, update->uuid);
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("%s", SQL));	
+
 	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db));
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db)));		
 		return;
 	}	
 
@@ -237,7 +258,9 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 			/* fill json with data */
 			cJSON *column = cJSON_CreateObject();
 			if (!column){
-				ERR("%s", "can't cJSON_CreateObject");
+				if (update->d->on_error)
+					update->d->on_error(update->d->on_error_data, 
+						STR_ERR("%s", "can't cJSON_CreateObject"));		
 				continue;
 			}
 			cJSON_AddItemToObject(column, "name", cJSON_CreateString(title));
@@ -257,7 +280,10 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 				/* buffer overload safe get data */
 				void *buf = malloc(len);
 				if (!buf){
-					ERR("can't allocate memory for buffer size: %ld", len);
+					if (update->d->on_error)
+						update->d->on_error(update->d->on_error_data, 
+							STR_ERR("can't allocate memory for buffer size: %ld"
+								, len));					
 					break;
 				}
 				memcpy(buf, value, len);
@@ -265,7 +291,10 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 				/* allocate new struct update for thread */
 				struct kdata2_update *new_update = NEW(struct kdata2_update);
 				if (!new_update){
-					ERR("%s", "can't allocate memory for struct kdata2_update");
+					if (update->d->on_error)
+						update->d->on_error(update->d->on_error_data, 
+							STR_ERR("%s", "can't allocate memory for struct kdata2_update"));					
+					
 					break;
 				}
 
@@ -280,6 +309,10 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 				new_update->data_to_free = buf;
 
 				/* upload data to YandexDisk */
+				if (update->d->on_log)
+					update->d->on_log(update->d->on_log_data, 
+							STR_LOG("c_yandex_disk_upload_data: app:/%s/%s, data: %ld", 
+								DATABASE, update->uuid, len));				
 				c_yandex_disk_upload_data(update->d->access_token, buf, len, 
 						STR("app:/%s/%s", DATAFILES, data_id), true, false, 
 								new_update, _after_upload_to_YandexDisk, NULL, NULL);
@@ -292,7 +325,10 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 					/* buffer overload safe get data */
 					char *buf = malloc(len + 1);
 					if (!buf){
-						ERR("can't allocate memory for buffer size: %ld", len + 1);
+						if (update->d->on_error)
+							update->d->on_error(update->d->on_error_data, 
+								STR_ERR("can't allocate memory for buffer size: %ld"
+									, len + 1));					
 						break;
 					}
 					strncpy(buf, (const char *)value, len);
@@ -323,6 +359,11 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 	/* upload json and remove uuid from update table */
 	char *data = cJSON_Print(json);
 	update->data_to_free = data;
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("c_yandex_disk_upload_data: app:/%s/%s, data: %s", 
+					DATABASE, update->uuid, data));				
+	
 	c_yandex_disk_upload_data(update->d->access_token, data, strlen(data) + 1, 
 			STR("app:/%s/%s", DATABASE, update->uuid), true, false, 
 					update, _after_upload_to_YandexDisk, NULL, NULL);	
@@ -336,15 +377,16 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 
 	kdata2_t *d = user_data;
 
-	if (!d){
-		ERR("%s", "data is NULL");
+	if (!d)
 		return 0; // return 0 - do not interrupt SQL
-	}	
 
 	/* new kdata_update */
 	struct kdata2_update *update = NEW(struct kdata2_update);
 	if (!update){
-			ERR("%s", "can't allocate memory for struct kdata2_update");
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", 
+					"can't allocate memory for struct kdata2_update"));					
 		return 0; // return 0 - do not interrupt SQL
 	}
 
@@ -374,6 +416,9 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 
 	/* if local update is deleted -> move remote data to deleted */
 	if (update->deleted) {
+		if (update->d->on_log)
+			update->d->on_log(update->d->on_log_data, 
+					STR_LOG("c_yandex_disk_mv: app:/%s/%s", DELETED, update->uuid));	
 		c_yandex_disk_mv(d->access_token, filepath, 
 				STR("app:/%s/%s", DELETED, update->uuid), true, 
 						update, _remove_local_update);
@@ -385,12 +430,18 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 
 	/* check remote data exists */
 	c_yd_file_t remote;
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("c_yandex_disk_file_info: %s", 
+					filepath));	
 	c_yandex_disk_file_info(d->access_token, filepath, &remote, &errmsg);
 
 	if (errmsg){
 		if (strcmp(errmsg, "UnauthorizedError") == 0){
-			ERR("%s", "Unauthorized to Yandex Disk");
-			
+			if (update->d->on_error)
+				update->d->on_error(update->d->on_error_data, 
+					STR_ERR("%s", 
+						"Unauthorized to Yandex Disk"));					
 			free(update);
 			return 0;
 		}
@@ -413,15 +464,24 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 			if (strcmp(errmsg, "DiskNotFoundError") == 0){
 				/* no remote data -> upload local data to Yandex Disk */
 				_upload_local_data_to_Yandex_Disk(update);
+				if (update->d->on_log)
+					update->d->on_log(update->d->on_log_data, 
+							STR_LOG("_upload_local_data_to_Yandex_Disk: %s", 
+								update->uuid));	
+				free(errmsg);
 				return 0;
 			} else {
-				ERR("%s", errmsg);
-				
+				if (update->d->on_error)
+					update->d->on_error(update->d->on_error_data, 
+						STR_ERR("%s", errmsg));	
 				free(update);
+				free(errmsg);
 				return -1;
 			}
 		}
-		ERR("%s", "unknown error");
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", "unknown error"));	
 			
 		free(update);
 		return -1;
@@ -431,27 +491,25 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 }
 
 int 
-_download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, char *error){
-	/* handle error */
-	if (error)
-		ERR("%s", error);
+_download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, const char *error){
 
 	struct kdata2_update *update = user_data;	
 
-	if (!update){
-		ERR("%s", "data is NULL");
+	if (!update && !update->d)
 		return -1;
-	}	
-
-	if (!update->d){
-		ERR("%s", "update->data is NULL");
-		return -1;
-	}	
+	
+	/* handle error */
+	if (error)
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", error));	
 
 	/* allocate SQL string */
 	char *SQL = malloc(size + BUFSIZ);
 	if (!SQL){
-		ERR("can't allocate memory for SQL string size: %ld", size + BUFSIZ);
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("can't allocate memory for SQL string size: %ld", size + BUFSIZ));	
 		return -1;
 	}
 
@@ -462,10 +520,16 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 							(char*)data, update->uuid		
 	);
 
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("%s", SQL));	
 	char *errmsg = NULL;
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
+		free(errmsg);
 	}
 
 	/* free SQL string */
@@ -475,27 +539,24 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 }
 
 int 
-_download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, char *error){
+_download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, const char *error){
+	struct kdata2_update *update = user_data;	
+
+	if (!update && !update->d)
+		return -1;
+	
 	/* handle error */
 	if (error)
-		ERR("%s", error);
-
-	struct kdata2_update *update = user_data;
-
-	if (!update){
-		ERR("%s", "data is NULL");
-		return -1;
-	}	
-
-	if (!update->d){
-		ERR("%s", "update->data is NULL");
-		return -1;
-	}	
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", error));	
 
 	/* data is json file */
 	cJSON *json = cJSON_ParseWithLength(data, size);
 	if (!json){
-		ERR("%s", "can't parse json file");
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", "can't parse json file"));			
 		free(update);
 		return 1;
 	}
@@ -503,7 +564,9 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	/* get tablename */
 	cJSON *tablename = cJSON_GetObjectItem(json, "tablename");
 	if (!tablename){
-		ERR("%s", "can't get tablename from json file");
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", "can't get tablename from json file"));		
 		cJSON_free(json);
 		free(update);
 		return 1;
@@ -515,7 +578,9 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	/* get columns */
 	cJSON *columns = cJSON_GetObjectItem(json, "columns");
 	if (!columns || !cJSON_IsArray(columns)){
-		ERR("%s", "can't get columns from json file");
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", "can't get columns from json file"));		
 		cJSON_free(json);
 		free(update);
 		return 1;
@@ -535,10 +600,16 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 			update->table, update->timestamp, UUIDCOLUMN, update->uuid		
 	);
 
+	if (update->d->on_log)
+		update->d->on_log(update->d->on_log_data, 
+				STR_LOG("%s", SQL));	
 	char *errmsg = NULL;
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
+		free(errmsg);
 	}
 
 	/* get values for each column and update local database */
@@ -546,12 +617,16 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 	cJSON_ArrayForEach(column, columns){
 		cJSON *name = cJSON_GetObjectItem(column, "name");
 		if (!name || !cJSON_IsString(name)){
-			ERR("%s", "can't get column name from json file");
+			if (update->d->on_error)
+				update->d->on_error(update->d->on_error_data, 
+					STR_ERR("%s", "can't get column name from json file"));			
 			continue;
 		}		
 		cJSON *type = cJSON_GetObjectItem(column, "type");
 		if (!type || !cJSON_IsNumber(type)){
-			ERR("%s", "can't get column type from json file");
+			if (update->d->on_error)
+				update->d->on_error(update->d->on_error_data, 
+					STR_ERR("%s", "can't get column type from json file"));			
 			continue;
 		}		
 		if (cJSON_GetNumberValue(type) == KDATA2_TYPE_DATA) {
@@ -561,9 +636,16 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 
 			cJSON *data = cJSON_GetObjectItem(column, "data");
 			if (!data){
-				ERR("%s", "can't get column data from json file");
+				if (update->d->on_error)
+					update->d->on_error(update->d->on_error_data, 
+						STR_ERR("%s", "can't get column data from json file"));			
 				continue;
 			}			
+			
+			if (update->d->on_log)
+				update->d->on_log(update->d->on_log_data, 
+						STR_LOG("c_yandex_disk_download_data: app:/%s/%s", 
+							DATAFILES, cJSON_GetStringValue(data)));	
 			c_yandex_disk_download_data(update->d->access_token, 
 					STR("app:/%s/%s", DATAFILES, cJSON_GetStringValue(data)), true, 
 							update, _download_data_from_YandexDisk_to_local_database_cb, 
@@ -571,7 +653,9 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 		} else {
 			cJSON *value = cJSON_GetObjectItem(column, "value");
 			if (!value){
-				ERR("%s", "can't get column value from json file");
+				if (update->d->on_error)
+					update->d->on_error(update->d->on_error_data, 
+						STR_ERR("%s", "can't get column value from json file"));			
 				continue;
 			}		
 			if (cJSON_GetNumberValue(type) == KDATA2_TYPE_NUMBER){
@@ -580,9 +664,16 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 								cJSON_GetStringValue(name), 
 										(long)cJSON_GetNumberValue(value), UUIDCOLUMN, update->uuid		
 				);
+				if (update->d->on_log)
+					update->d->on_log(update->d->on_log_data, 
+							STR_LOG("%s", SQL));				
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
-					ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+					if (update->d->on_error)
+						update->d->on_error(update->d->on_error_data, 
+								STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));	
+					free(errmsg);
+					errmsg = NULL;
 				}
 			} else if (cJSON_GetNumberValue(type) == KDATA2_TYPE_FLOAT){
 				snprintf(SQL, BUFSIZ-1,
@@ -590,9 +681,16 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 								cJSON_GetStringValue(name), 
 										(double)cJSON_GetNumberValue(value), UUIDCOLUMN, update->uuid		
 				);
+				if (update->d->on_log)
+					update->d->on_log(update->d->on_log_data, 
+							STR_LOG("%s", SQL));				
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
-					ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+					if (update->d->on_error)
+						update->d->on_error(update->d->on_error_data, 
+								STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));	
+					free(errmsg);
+					errmsg = NULL;
 				}
 			} else {
 				snprintf(SQL, BUFSIZ-1,
@@ -600,9 +698,16 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 								cJSON_GetStringValue(name), 
 										cJSON_GetStringValue(value), UUIDCOLUMN, update->uuid		
 				);				
+				if (update->d->on_log)
+					update->d->on_log(update->d->on_log_data, 
+							STR_LOG("%s", SQL));				
 				sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 				if (errmsg){
-					ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+					if (update->d->on_error)
+						update->d->on_error(update->d->on_error_data, 
+								STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));	
+					free(errmsg);
+					errmsg = NULL;
 				}
 			}
 		}
@@ -629,7 +734,9 @@ _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 	/* allocate struct and fill update */
 	struct kdata2_update *update = NEW(struct kdata2_update);
 	if (!update){
-		ERR("%s", "can't allocate memory for struct kdata2_update");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "can't allocate memory for struct kdata2_update"));		
 		return;
 	}
 	update->d = d;
@@ -640,30 +747,35 @@ _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 	update->timestamp = file->modified;
 
 	/* download data */
+	if (d->on_log)
+		d->on_log(d->on_log_data, 
+				STR_LOG("c_yandex_disk_download_data: %s", file->path));	
 	c_yandex_disk_download_data(d->access_token, file->path, false, 
 			update, _download_json_from_YandexDisk_to_local_database_cb, NULL, NULL);	
 
 }
 
 static int 
-_for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, char * error){
+_for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, const char * error){
+	kdata2_t *d = user_data;
+
+	if (!d)
+		return -1;
+
 	if (error){
-		ERR("%s", error);
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", error));		
 		return 0;
 	}
 
 	if (!file){
-		ERR("%s", "file is NULL");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "file is NULL"));		
 		return -1;
 	}	
 	
-	kdata2_t *d = user_data;
-
-	if (!d){
-		ERR("%s", "data is NULL");
-		return -1;
-	}	
-
 	/* check if data exists in table */
 	bool data_exists = false; 
 
@@ -677,9 +789,14 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, char 
 		char *SQL = STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
 							table->tablename, UUIDCOLUMN, file->name);
 		
+		if (d->on_log)
+			d->on_log(d->on_log_data, 
+					STR_LOG("%s", SQL));		
 		int res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 		if (res != SQLITE_OK) {
-			ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db));
+			if (d->on_error)
+				d->on_error(d->on_error_data, 
+						STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db)));		
 			continue;
 		}	
 
@@ -694,6 +811,10 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, char 
 			/* compare timestamps */
 			if (file->modified > timestamp){
 				/* download data from remote YandexDisk to local database */
+				if (d->on_log)
+					d->on_log(d->on_log_data, 
+							STR_LOG("_download_from_YandexDisk_to_local_database: %s",
+							   	file->name));				
 				_download_from_YandexDisk_to_local_database(d, file);
 			}
 		}
@@ -709,20 +830,23 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, char 
 }
 
 int 
-_for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, char * error){
+_for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, const char * error){
+	kdata2_t *d = user_data;
+
+	if (!d)
+		return -1;
+
 	if (error){
-		ERR("%s", error);
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", error));		
 		return 0;
 	}
 
 	if (!file){
-		ERR("%s", "file is NULL");
-		return -1;
-	}
-
-	kdata2_t *d = user_data;
-	if (!d){
-		ERR("%s", "data is NULL");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "file is NULL"));		
 		return -1;
 	}	
 
@@ -735,9 +859,14 @@ _for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, char *
 		char *errmsg = NULL;
 		char *SQL = STR("DELETE FROM '%s' WHERE %s = '%s'", table->tablename, UUIDCOLUMN, file->name);
 		
+		if (d->on_log)
+			d->on_log(d->on_log_data, STR_LOG("%s", SQL));		
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+			if (d->on_error)
+				d->on_error(d->on_error_data, 
+						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
+			free(errmsg);
 		}		
 	}
 	
@@ -757,16 +886,26 @@ void _yd_update(kdata2_t *d){
 	 * 8. remove local data for deleted
 	 */
 
+	if (!d)
+		return;
+	
 	char *errmsg = NULL;
 
 	/* check Yandex Disk Connection */
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", "c_yandex_disk_file_info: app:/"));	
 	if (c_yandex_disk_file_info(d->access_token, "app:/", NULL, &errmsg)){
-			ERR("%s", "can't connect to Yandex Disk");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "can't connect to Yandex Disk"));		
 		return;
 	}	
 	
 	if (errmsg){
-			ERR("%s", errmsg);
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", errmsg));		
+		free(errmsg);		
 		return;
 	}	
 
@@ -781,7 +920,10 @@ void _yd_update(kdata2_t *d){
 	SQL = "SELECT * from _kdata2_updates"; 
 	sqlite3_exec(d->db, SQL, _for_each_update_in_SQLite, d, &errmsg);
 	if (errmsg){
-			ERR("sqlite3_exec: %s: %s", SQL, errmsg);
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
+		free(errmsg);		
 		return;
 	}	
 
@@ -815,15 +957,19 @@ void _yd_daemon_init(kdata2_t * d){
 	
 	err = pthread_attr_init(&attr);
 	if (err) {
-		ERR("can't set thread attributes: %d", err);
-		exit(err);
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("can't set thread attributes: %d", err));		
+		return;
 	}	
 	
 	//create new thread
 	err = pthread_create(&(d->tid), &attr, _yd_thread, d);
 	if (err) {
-		ERR("yd_daemon: can't create thread: %d", err);
-		exit(err);
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("can't create thread: %d", err));		
+		return;
 	}
 }
 
@@ -839,7 +985,8 @@ int kdata2_init(
 		...
 		)
 {
-	//LOG("%s", "Start kdata2_init...");	
+	if (on_log)
+		on_log(on_log_data, STR_LOG("%s", "init..."));	
 
 	/*
 	 * For init:
@@ -856,19 +1003,21 @@ int kdata2_init(
 	/* check filepath */
 	if (!filepath){
 		if (on_error)
-			on_error(on_error_data, MSG_ERR("filepath is NULL");	
+			on_error(on_error_data, STR_ERR("%s", "filepath is NULL"));	
 		return -1;
 	}
 
 	/* check database pointer */
 	if (!database){
-		ERR("%s", "database pointer is NULL");	
+		if (on_error)
+			on_error(on_error_data, STR_ERR("%s", "database pointer is NULL"));	
 		return -1;
 	}
 	/* allocate kdata2_t */
 	kdata2_t *d = NEW(kdata2_t);
 	if (!d){
-		ERR("%s", "kdata2_init: can't allocate kdata2_t *database");	
+		if (on_error)
+			on_error(on_error_data, STR_ERR("%s", "can't allocate kdata2_t"));			
 		return -1;
 	}
 	*database = d;
@@ -887,17 +1036,22 @@ int kdata2_init(
 	
 	/* init SQLIte database */
 	/* create database if needed */
+	if (on_log)
+		on_log(on_log_data, STR_LOG("sqlite3_open_v2: %s", d->filepath));	
 	err = sqlite3_open_v2(d->filepath, &(d->db), SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
 	if (err){
-		ERR("failed to open/create database at path: '%s': %s", 
-						d->filepath, sqlite3_errmsg(d->db));
+		if (on_error)
+			on_error(on_error_data, 
+					STR_ERR("failed to open/create database at path: '%s': %s", 
+						d->filepath, sqlite3_errmsg(d->db)));		
 		return err;
 	} 
 
 	/* allocate and fill tables array */
 	d->tables = malloc(8);
 	if (!d->tables){
-		ERR("%s", "can't allocate kdata2_t_table");	
+		if (on_error)
+			on_error(on_error_data, STR_ERR("%s", "can't allocate kdata2_t_table"));		
 		return -1;
 	}	
 	int tcount = 0;
@@ -918,7 +1072,9 @@ int kdata2_init(
 		// realloc tables
 		void *p = realloc(d->tables, tcount * 8 + 8);
 		if (!p) {
-			ERR("can't realloc tables with size: %d", tcount * 8 + 8);	
+			if (on_error)
+				on_error(on_error_data, 
+						STR_ERR("can't realloc tables with size: %d", tcount * 8 + 8));			
 			break;
 		}
 		d->tables = p;
@@ -991,21 +1147,33 @@ int kdata2_init(
 		/* run SQL command */
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+			if (on_error)
+				on_error(on_error_data, 
+						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+			free(errmsg);
 			return -1;
 		}
 		
 		/* add columns */
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN %s TEXT;", table->tablename, UUIDCOLUMN);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
-		if (errmsg)
-			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (errmsg){
+			if (on_error)
+				on_error(on_error_data, 
+						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+			free(errmsg);
+			errmsg = NULL;
+		}
 
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", table->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
-		if (errmsg)
-			ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
-
+		if (errmsg){
+			if (on_error)
+				on_error(on_error_data, 
+						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+			free(errmsg);
+			errmsg = NULL;
+		}
 	}
 
 	/* create table to store updates */
@@ -1022,9 +1190,14 @@ int kdata2_init(
 		;	
 
 	/* run SQL command */
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (on_error)
+			on_error(on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}
 
@@ -1048,10 +1221,15 @@ int kdata2_set_number_for_uuid(
 		long number, 
 		const char *uuid)
 {
+	if (!d)
+		return -1;
+
 	if (!uuid){
 		char _uuid[37];
 		if (uuid_new(_uuid)){
-			ERR("%s", "can't generate uuid");
+			if (d->on_error)
+				d->on_error(d->on_error_data, 
+						STR_ERR("%s", "can't generate uuid"));			
 			return -1;
 		}
 		uuid = _uuid;
@@ -1074,9 +1252,14 @@ int kdata2_set_number_for_uuid(
 			tablename, UUIDCOLUMN, uuid,
 			tablename, timestamp, column, number, UUIDCOLUMN, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}
 
@@ -1091,9 +1274,14 @@ int kdata2_set_number_for_uuid(
 			uuid,
 			timestamp, tablename, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}
 
@@ -1107,10 +1295,15 @@ int kdata2_set_float_for_uuid(
 		double number, 
 		const char *uuid)
 {
+	if (!d)
+		return -1;
+
 	if (!uuid){
 		char _uuid[37];
 		if (uuid_new(_uuid)){
-			ERR("%s", "can't generate uuid");
+			if (d->on_error)
+				d->on_error(d->on_error_data, 
+						STR_ERR("%s", "can't generate uuid"));			
 			return -1;
 		}
 		uuid = _uuid;
@@ -1133,9 +1326,14 @@ int kdata2_set_float_for_uuid(
 			tablename, UUIDCOLUMN, uuid,
 			tablename, timestamp, column, number, UUIDCOLUMN, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}
 
@@ -1150,9 +1348,14 @@ int kdata2_set_float_for_uuid(
 			uuid,
 			timestamp, tablename, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}
 
@@ -1166,11 +1369,16 @@ int kdata2_set_text_for_uuid(
 		const char *text, 
 		const char *uuid)
 {
+	if (!d)
+		return -1;
+
 	fprintf(stderr, "SET TEXT: %s FOR UUID: %s\n", text, uuid);
 	if (!uuid){
 		char _uuid[37];
 		if (uuid_new(_uuid)){
-			ERR("%s", "can't generate uuid");
+			if (d->on_error)
+				d->on_error(d->on_error_data, 
+						STR_ERR("%s", "can't generate uuid"));			
 			return -1;
 		}
 		uuid = _uuid;
@@ -1193,9 +1401,14 @@ int kdata2_set_text_for_uuid(
 			tablename, UUIDCOLUMN, uuid,
 			tablename, timestamp, column, text, UUIDCOLUMN, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}
 
@@ -1210,9 +1423,14 @@ int kdata2_set_text_for_uuid(
 			uuid,
 			timestamp, tablename, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}
 	
@@ -1227,17 +1445,24 @@ int kdata2_set_data_for_uuid(
 		int len,
 		const char *uuid)
 {
+	if (!d)
+		return -1;
+
 	if (!uuid){
 		char _uuid[37];
 		if (uuid_new(_uuid)){
-			ERR("%s", "can't generate uuid");
+			if (d->on_error)
+				d->on_error(d->on_error_data, 
+						STR_ERR("%s", "can't generate uuid"));			
 			return -1;
 		}
 		uuid = _uuid;
 	}
 
 	if (!data || !len){
-		ERR("%s", "no data");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "no data"));			
 		return 1;
 	}	
 
@@ -1258,9 +1483,14 @@ int kdata2_set_data_for_uuid(
 			uuid,
 			tablename, UUIDCOLUMN, uuid
 	);	
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}	
 
@@ -1268,18 +1498,25 @@ int kdata2_set_data_for_uuid(
 	
 	sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db));	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, errmsg));		
+		free(errmsg);
 		return -1;
 	}	
 
 	res = sqlite3_bind_blob(stmt, 1, data, len, SQLITE_TRANSIENT);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_bind_blob: %s", sqlite3_errmsg(d->db));	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_bind_blob: %s", sqlite3_errmsg(d->db)));		
 	}	
 
     if((res = sqlite3_step(stmt)) != SQLITE_DONE)
     {
-		ERR("sqlite3_step: %s", sqlite3_errmsg(d->db));	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_step: %s", sqlite3_errmsg(d->db)));		
         sqlite3_reset(stmt);
     } 
 
@@ -1296,9 +1533,14 @@ int kdata2_set_data_for_uuid(
 			uuid,
 			timestamp, tablename, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	res = sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg) {
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}	
 
@@ -1310,8 +1552,13 @@ int kdata2_remove_for_uuid(
 		const char *tablename, 
 		const char *uuid)
 {
+	if (!d)
+		return -1;
+
 	if (!uuid){
-		ERR("%s", "no uuid");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "no uuid"));		
 		return 1;
 	}	
 	
@@ -1320,9 +1567,14 @@ int kdata2_remove_for_uuid(
 	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1, "DELETE FROM '%s' WHERE %s = '%s'", tablename, UUIDCOLUMN, uuid);	
 
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}	
 
@@ -1337,9 +1589,14 @@ int kdata2_remove_for_uuid(
 			uuid,
 			time(NULL), tablename, uuid		
 	);
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+		free(errmsg);
 		return -1;
 	}	
 	
@@ -1359,13 +1616,20 @@ void kdata2_get(
 			)
 		)
 {
+	if (!d)
+		return;
+	
 	if (!SQL){
-		ERR("%s", "ERROR! kdata2_get: SQL is NULL\n");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "SQL is NULL"));		
 		return;
 	}
 	
 	if (!callback){
-		ERR("%s", "ERROR! kdata2_get: callback is NULL\n");
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "callback is NULL"));		
 		return;
 	}
 
@@ -1374,9 +1638,14 @@ void kdata2_get(
 	char *errmsg = NULL;
 	sqlite3_stmt *stmt;
 	
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
 	res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(d->db));	
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, errmsg));		
+		free(errmsg);
 		return;
 	}	
 
@@ -1424,7 +1693,9 @@ void kdata2_get(
 					/* buffer overload safe get data */
 					char *buf = malloc(len + 1);
 					if (!buf){
-						ERR("%s", "can't allocate memory for buffer");
+						if (d->on_error)
+							d->on_error(d->on_error_data, 
+									STR_ERR("%s", "can't allocate memory for buffer"));		
 						break;
 					}
 					strncpy(buf, (const char *)value, len);
@@ -1468,13 +1739,14 @@ int kdata2_close(kdata2_t *d){
 }
 
 int kdata2_set_access_token(kdata2_t * d, const char *access_token){
-	if (!access_token){
-		ERR("%s", "access_token is NULL");
-		return -1;
-	}
 
-	if (!d){
-		ERR("%s", "dataset is NULL");
+	if (!d)
+		return -1;
+	
+	if (!access_token){
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "access_token is NULL"));		
 		return -1;
 	}
 
@@ -1487,21 +1759,18 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	// check table pointer
 	if (!t){
-		ERR("%s", "table pointer is NULL");
 		return -1;
 	}
 	
 	/* allocate new table */
 	*t = NEW(struct kdata2_table);
 	if (!*t){
-		ERR("%s", "can't allocate memory for struct kdata2_tab");
 		return -1;
 	}
 	
 	// pointer to collumns
 	struct kdata2_column **columns = malloc(8);
 	if (!columns){
-		ERR("%s", "can't allocate memory for columns array");
 		return -1;
 	}
 
@@ -1529,7 +1798,6 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 		/* allocate new column */
 		struct kdata2_column *new = NEW(struct kdata2_column);
 		if (!new){
-			ERR("%s", "can't allocate memory for column");
 			break;
 		}
 
@@ -1544,7 +1812,6 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 		//realloc columns array
 		void *p = realloc(columns, i * 8 + 8);
 		if (!p){
-			ERR("%s", "can't allocate memory for columns array");
 			break;
 		}		
 		columns = p;
