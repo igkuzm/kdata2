@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 22.05.2023
+ * Last Modified Date: 25.05.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -21,9 +21,11 @@
 #include "cYandexDisk/cJSON.h"
 #include "cYandexDisk/uuid4.h"
 
-#include "log.h"
-
 #define NEW(T)   ({T *new = malloc(sizeof(T)); new;})
+
+#define STR(...)     ({char s[BUFSIZ]; sprintf(s, __VA_ARGS__); s;}) 
+#define STR_ERR(...) STR("E/_%s: %s: %s", __FILE__, __func__, STR(__VA_ARGS__))
+#define STR_LOG(...) STR("I/_%s: %s: %s", __FILE__, __func__, STR(__VA_ARGS__))
 
 struct kdata2_update {
 	char table[128];
@@ -50,13 +52,13 @@ int uuid_new(char uuid[37]){
 int 
 _remove_local_update(void *user_data, char *error){
 	struct kdata2_update *update = user_data;
-	if (!update){
-		ERR("%s", "data is NULL");
+	if (!update && !update->d)
 		return -1;
-	}
 	
 	if (error){
-		ERR("%s", error);
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", error));
 		return -1;
 	}
 
@@ -67,7 +69,9 @@ _remove_local_update(void *user_data, char *error){
 	SQL = STR("DELETE FROM _kdata2_updates WHERE %s = '%s'", UUIDCOLUMN, update->uuid); 
 	sqlite3_exec(update->d->db, SQL, NULL, NULL, &errmsg);
 	if (errmsg){
-		ERR("sqlite3_exec: %s: %s", SQL, errmsg);	
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
 		return -1;
 	}	
 
@@ -80,13 +84,13 @@ int
 _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	struct kdata2_update *update = user_data;
 
-	if (!update){
-		ERR("%s","data is NULL");
+	if (!update && !update->d)
 		return -1;
-	}	
 
-	if (error)
-		ERR("%s: %s\n", update->uuid, error);
+	if (error){
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", error));
 	
 	/* free data */
 	if (update->data_to_free)
@@ -103,7 +107,9 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	
 	int res = sqlite3_prepare_v2(update->d->db, SQL, -1, &stmt, NULL);
 	if (res != SQLITE_OK) {
-		ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db));
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db)));		
 		return -1;
 	}	
 
@@ -125,10 +131,17 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, char *error){
 	if (c_yandex_disk_file_info(update->d->access_token, 
 				STR("app:/%s/%s", DATABASE, update->uuid), &file, &errmsg))
 	{
-		if(errmsg)
-			ERR("%s\n", errmsg);
+		if(errmsg){
+			if (update->d->on_error)
+				update->d->on_error(update->d->on_error_data, 
+					STR_ERR("%s", errmsg));			
+			free(errmsg);
+		}
 		
-		ERR("%s", "can't get file");
+		if (update->d->on_error)
+			update->d->on_error(update->d->on_error_data, 
+				STR_ERR("%s", "can't get file"));		
+		
 		return -1;
 	};
 
@@ -818,6 +831,10 @@ int kdata2_init(
 		kdata2_t ** database,
 		const char * filepath,
 		const char * access_token,
+		void          *on_error_data,
+		void         (*on_error)      (void *on_error_data, const char *error),
+		void          *on_log_data,
+		void         (*on_log)        (void *on_log_data, const char *message),		
 		int sec,
 		...
 		)
@@ -838,7 +855,8 @@ int kdata2_init(
 	
 	/* check filepath */
 	if (!filepath){
-		ERR("%s", "filepath is NULL");	
+		if (on_error)
+			on_error(on_error_data, MSG_ERR("filepath is NULL");	
 		return -1;
 	}
 
@@ -854,6 +872,12 @@ int kdata2_init(
 		return -1;
 	}
 	*database = d;
+	
+	/* set callbacks to NULL */
+	d->on_error_data = on_error_data;
+	d->on_error      = on_error;
+	d->on_log_data   = on_log_data;
+	d->on_log        = on_log;
 
 	/* set data attributes */
 	d->sec = sec;

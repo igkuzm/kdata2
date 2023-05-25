@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 02.05.2023
+ * Last Modified Date: 25.05.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -61,6 +61,15 @@ typedef struct kdata2 {
 	struct kdata2_table ** tables; // NULL-terminated array of tables pointers
 	int sec;				       // number of seconds of delay to sinc data with Yandex Disk
 	pthread_t tid;                 // Yandex Disk daemon thread id
+	void *on_error_data;           // pointer to transfer through on_error callback
+	void (*on_error)(              // callback on error
+			void *on_error_data, 
+			const char *error);    // error message
+	void *on_log_data;             // pointer to transfer through on_log callback
+	void (*on_log)(                // callback on log message
+			void *on_log_data,
+			const char *message    // log message
+			);
 } kdata2_t;
 
 /* init function */
@@ -69,6 +78,10 @@ kdata2_init(
 		kdata2_t     ** database,     // pointer to kdata2_t
 		const char    * filepath,     // file path to where store SQLite data
 		const char    * access_token, // Yandex Disk access token (may be NULL)
+		void          *on_error_data,
+		void         (*on_error)      (void *on_error_data, const char *error),
+		void          *on_log_data,
+		void         (*on_log)        (void *on_log_data, const char *message),
 		int sec,                      // number of seconds of delay to sinc data with Yandex Disk
 		...							  // kdata2_table, NULL
 );
