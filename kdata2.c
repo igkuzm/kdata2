@@ -1373,7 +1373,6 @@ int kdata2_set_text_for_uuid(
 	if (!d)
 		return -1;
 
-	fprintf(stderr, "SET TEXT: %s FOR UUID: %s\n", text, uuid);
 	if (!uuid){
 		char _uuid[37];
 		if (uuid_new(_uuid)){
