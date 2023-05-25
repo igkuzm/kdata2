@@ -1158,9 +1158,9 @@ int kdata2_init(
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN %s TEXT;", table->tablename, UUIDCOLUMN);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			if (on_error)
-				on_error(on_error_data, 
-						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+			if (on_log)
+				on_log(on_log_data, 
+						STR_LOG("sqlite3_exec: %s: %s", SQL, errmsg));			
 			free(errmsg);
 			errmsg = NULL;
 		}
@@ -1168,9 +1168,9 @@ int kdata2_init(
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", table->tablename);
 		sqlite3_exec(d->db, SQL, NULL, NULL, &errmsg);
 		if (errmsg){
-			if (on_error)
-				on_error(on_error_data, 
-						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
+			if (on_log)
+				on_log(on_log_data, 
+						STR_LOG("sqlite3_exec: %s: %s", SQL, errmsg));			
 			free(errmsg);
 			errmsg = NULL;
 		}
