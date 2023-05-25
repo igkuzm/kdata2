@@ -895,16 +895,16 @@ void _yd_update(kdata2_t *d){
 	if (d->on_log)
 		d->on_log(d->on_log_data, STR_LOG("%s", "c_yandex_disk_file_info: app:/"));	
 	if (c_yandex_disk_file_info(d->access_token, "app:/", NULL, &errmsg)){
-		if (d->on_error)
-			d->on_error(d->on_error_data, 
-					STR_ERR("%s", "can't connect to Yandex Disk"));		
+		if (d->on_log)
+			d->on_log(d->on_log_data, 
+					STR_LOG("%s", "can't connect to Yandex Disk"));		
 		return;
 	}	
 	
 	if (errmsg){
-		if (d->on_error)
-			d->on_error(d->on_error_data, 
-					STR_ERR("%s", errmsg));		
+		if (d->on_log)
+			d->on_log(d->on_log_data, 
+					STR_LOG("%s", errmsg));		
 		free(errmsg);		
 		return;
 	}	
@@ -920,9 +920,9 @@ void _yd_update(kdata2_t *d){
 	SQL = "SELECT * from _kdata2_updates"; 
 	sqlite3_exec(d->db, SQL, _for_each_update_in_SQLite, d, &errmsg);
 	if (errmsg){
-		if (d->on_error)
-			d->on_error(d->on_error_data, 
-					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
+		if (d->on_log)
+			d->on_log(d->on_log_data, 
+					STR_LOG("sqlite3_exec: %s: %s", SQL, errmsg));		
 		free(errmsg);		
 		return;
 	}	
@@ -941,7 +941,8 @@ static void * _yd_thread(void * data){
 	struct kdata2 *d = data; 
 
 	while (1) {
-		//LOG("%s", "updating data...");
+		if (d->on_log)
+			d->on_log(d->on_log_data, STR_LOG("%s", "updating data..."));	
 		_yd_update(d);
 		sleep(d->sec);
 	}
