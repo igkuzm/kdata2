@@ -13,12 +13,12 @@ CYD_LINK =
 CYD_OBJ =
 
 if WINDOWS
-	libkdata2_a_SOURCES += sqlite3.c sqlite3.h
-	CYD_LINK = -lcYandexDiak -LcYandexDisk/.libs
+libkdata2_a_SOURCES += sqlite3.c sqlite3.h
+CYD_LINK = -lcYandexDiak -LcYandexDisk/.libs
 else
-	SQLITE3_LINK += -lsqlite3
-	CURL_LINK   += -lcurl
-	CYD_OBJ = cYandexDisk/*.o 
+SQLITE3_LINK += -lsqlite3
+CURL_LINK   += -lcurl
+CYD_OBJ = cYandexDisk/*.o 
 endif
 
 

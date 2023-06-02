@@ -18,7 +18,7 @@ case "${host_os}" in
     darwin*)
         build_mac=yes;;
     *)
-				build_linux=yes;;
+		build_linux=yes;;
 esac
 AM_CONDITIONAL([LINUX],   [test "$build_linux"   = "yes"])
 AM_CONDITIONAL([WINDOWS], [test "$build_windows" = "yes"])
