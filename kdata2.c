@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 25.05.2023
+ * Last Modified Date: 02.08.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -11,6 +11,7 @@
  */
 
 #include "kdata2.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1215,7 +1216,8 @@ int kdata2_init(
 	return 0;
 }
 
-int kdata2_set_number_for_uuid(
+char *
+kdata2_set_number_for_uuid(
 		kdata2_t *d, 
 		const char *tablename, 
 		const char *column, 
@@ -1223,15 +1225,16 @@ int kdata2_set_number_for_uuid(
 		const char *uuid)
 {
 	if (!d)
-		return -1;
+		return NULL;
 
 	if (!uuid){
-		char _uuid[37];
+		char *_uuid = malloc(37);
+		if (!_uuid) return NULL;
 		if (uuid_new(_uuid)){
 			if (d->on_error)
 				d->on_error(d->on_error_data, 
 						STR_ERR("%s", "can't generate uuid"));			
-			return -1;
+			return NULL;
 		}
 		uuid = _uuid;
 	}
@@ -1261,7 +1264,7 @@ int kdata2_set_number_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}
 
 	/* update update table */
@@ -1283,13 +1286,13 @@ int kdata2_set_number_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}
 
-	return 0;
+	return (char *)uuid;
 }
 
-int kdata2_set_float_for_uuid(
+char * kdata2_set_float_for_uuid(
 		kdata2_t * d, 
 		const char *tablename, 
 		const char *column, 
@@ -1297,15 +1300,16 @@ int kdata2_set_float_for_uuid(
 		const char *uuid)
 {
 	if (!d)
-		return -1;
+		return NULL;
 
 	if (!uuid){
-		char _uuid[37];
+		char *_uuid = malloc(37);
+		if (!_uuid) return NULL;
 		if (uuid_new(_uuid)){
 			if (d->on_error)
 				d->on_error(d->on_error_data, 
 						STR_ERR("%s", "can't generate uuid"));			
-			return -1;
+			return NULL;
 		}
 		uuid = _uuid;
 	}
@@ -1335,7 +1339,7 @@ int kdata2_set_float_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}
 
 	/* update update table */
@@ -1357,13 +1361,13 @@ int kdata2_set_float_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}
 
-	return 0;
+	return (char *)uuid;
 }
 
-int kdata2_set_text_for_uuid(
+char * kdata2_set_text_for_uuid(
 		kdata2_t *d, 
 		const char *tablename, 
 		const char *column, 
@@ -1371,7 +1375,7 @@ int kdata2_set_text_for_uuid(
 		const char *uuid)
 {
 	if (!d)
-		return -1;
+		return NULL;
 
 	if (!uuid){
 		char _uuid[37];
@@ -1379,7 +1383,7 @@ int kdata2_set_text_for_uuid(
 			if (d->on_error)
 				d->on_error(d->on_error_data, 
 						STR_ERR("%s", "can't generate uuid"));			
-			return -1;
+			return NULL;
 		}
 		uuid = _uuid;
 	}
@@ -1409,7 +1413,7 @@ int kdata2_set_text_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}
 
 	/* update update table */
@@ -1431,13 +1435,13 @@ int kdata2_set_text_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}
 	
-	return 0;
+	return (char *)uuid;
 }
 
-int kdata2_set_data_for_uuid(
+char * kdata2_set_data_for_uuid(
 		kdata2_t *d, 
 		const char *tablename, 
 		const char *column, 
@@ -1446,15 +1450,16 @@ int kdata2_set_data_for_uuid(
 		const char *uuid)
 {
 	if (!d)
-		return -1;
+		return NULL;
 
 	if (!uuid){
-		char _uuid[37];
+		char *_uuid = malloc(37);
+		if (!_uuid) return NULL;
 		if (uuid_new(_uuid)){
 			if (d->on_error)
 				d->on_error(d->on_error_data, 
 						STR_ERR("%s", "can't generate uuid"));			
-			return -1;
+			return NULL;
 		}
 		uuid = _uuid;
 	}
@@ -1463,7 +1468,7 @@ int kdata2_set_data_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("%s", "no data"));			
-		return 1;
+		return NULL;
 	}	
 
 	time_t timestamp = time(NULL);
@@ -1491,7 +1496,7 @@ int kdata2_set_data_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}	
 
 	sprintf(SQL, "UPDATE '%s' SET '%s' = (?) WHERE %s = '%s'", tablename, column, UUIDCOLUMN, uuid);
@@ -1502,7 +1507,7 @@ int kdata2_set_data_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, errmsg));		
 		free(errmsg);
-		return -1;
+		return NULL;
 	}	
 
 	res = sqlite3_bind_blob(stmt, 1, data, len, SQLITE_TRANSIENT);
@@ -1541,10 +1546,10 @@ int kdata2_set_data_for_uuid(
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 		free(errmsg);
-		return -1;
+		return NULL;
 	}	
 
-	return 0;
+	return (char *)uuid;
 }
 
 int kdata2_remove_for_uuid(
@@ -1603,16 +1608,57 @@ int kdata2_remove_for_uuid(
 	return 0;
 }
 
+char * kdata2_get_string(
+		kdata2_t *d, 
+		const char *SQL)
+{
+	if (!d)
+		return NULL;
+
+	if (!SQL){
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("%s", "SQL is NULL"));		
+		return NULL;
+	}
+
+	int res;
+	char *errmsg = NULL;
+	sqlite3_stmt *stmt;
+	
+	if (d->on_log)
+		d->on_log(d->on_log_data, STR_LOG("%s", SQL));	
+	res = sqlite3_prepare_v2(d->db, SQL, -1, &stmt, NULL);
+	if (res != SQLITE_OK) {
+		if (d->on_error)
+			d->on_error(d->on_error_data, 
+					STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, errmsg));		
+		free(errmsg);
+		return NULL;
+	}	
+
+	// get first value
+	sqlite3_step(stmt);
+	const char *str = sqlite3_column_name(stmt, 0);
+	if (!str)
+		return NULL;
+	
+	char *ret_str = strdup(str);
+	sqlite3_finalize(stmt);
+	return ret_str;
+}	
+
 void kdata2_get(
 		kdata2_t *d, 
 		const char *SQL, 
 		void *user_data,
 		int (*callback)(
 			void *user_data,
-			enum KDATA2_TYPE type,
-			const char *column, 
-			void *value,
-			size_t size
+			int num_cols,
+			enum KDATA2_TYPE types[],
+			const char *columns[], 
+			void *values[],
+			size_t sizes[]
 			)
 		)
 {
@@ -1652,6 +1698,11 @@ void kdata2_get(
 	int num_cols = sqlite3_column_count(stmt); //number of colums
 	
 	while (sqlite3_step(stmt) != SQLITE_DONE) {
+		enum KDATA2_TYPE types[num_cols];
+		const char *columns[num_cols];
+		void *values[num_cols];
+		size_t sizes[num_cols];
+
 		/* iterate columns */
 		int i;
 		for (i = 0; i < num_cols; ++i) {
@@ -1666,60 +1717,47 @@ void kdata2_get(
 				
 				default: type = KDATA2_TYPE_TEXT; break;
 			}
+			types[i] = type;
 
 			/* get title */
-			const char *title = sqlite3_column_name(stmt, i);
+			columns[i] = sqlite3_column_name(stmt, i);
 
 			/* switch data types */
 			switch (type) {
 				case KDATA2_TYPE_NUMBER: {
 					long number = sqlite3_column_int64(stmt, i);
-					if (callback(user_data, type, title, &number, 1))
-						return;
-					
+					values[i] = &number;	
+					sizes[i] = 1;	
 					break;							 
 				} 
 				case KDATA2_TYPE_FLOAT: {
 					double number = sqlite3_column_double(stmt, i);
-					if (callback(user_data, type, title, &number, 1))
-						return;
-					
+					values[i] = &number;	
+					sizes[i] = 1;	
 					break;							 
 				}										 
 				case KDATA2_TYPE_TEXT: {
 					size_t len = sqlite3_column_bytes(stmt, i); 
-					const unsigned char *value = sqlite3_column_text(stmt, i);
-					
-					/* buffer overload safe get data */
-					char *buf = malloc(len + 1);
-					if (!buf){
-						if (d->on_error)
-							d->on_error(d->on_error_data, 
-									STR_ERR("%s", "can't allocate memory for buffer"));		
-						break;
-					}
-					strncpy(buf, (const char *)value, len);
-					buf[len] = 0;
-					
-					if (callback(user_data, type, title, buf, strlen(buf))){
-						free(buf);	
-						return;
-					}
-					free(buf);	
-					
+					values[i] = (void *)sqlite3_column_text(stmt, i);
+					sizes[i] = len;	
 					break;							 
 				} 
 				case KDATA2_TYPE_DATA: {
 					size_t len = sqlite3_column_bytes(stmt, i); 
-					const void *value = sqlite3_column_blob(stmt, i);
-					if (callback(user_data, type, title, (void *)value, len)){
-						return;
-					}
+					values[i] = (void *)sqlite3_column_blob(stmt, i);
+					sizes[i] = len;	
 					break;							 
 				
 				default:
 					break;
 				} 
+			}
+			// do callback
+			if (callback){
+				if (callback(user_data, num_cols, types, columns, values, sizes)){
+					sqlite3_finalize(stmt);
+					return;
+				}
 			}
 		}
 	}

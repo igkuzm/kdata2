@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 25.05.2023
+ * Last Modified Date: 02.08.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -93,7 +93,8 @@ kdata2_set_access_token(kdata2_t * database, const char *access_token);
 int kdata2_close(kdata2_t *dataset);
 
 /* set number for data entity with uuid; set uuid to NULL to create new */
-int 
+/* return UUID (allocated if uuid is NULL) */
+char * 
 kdata2_set_number_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -102,7 +103,8 @@ kdata2_set_number_for_uuid(
 		const char *uuid);
 
 /* set number for data entity with uuid; set uuid to NULL to create new */
-int 
+/* return UUID (allocated if uuid is NULL) */
+char * 
 kdata2_set_float_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -111,7 +113,8 @@ kdata2_set_float_for_uuid(
 		const char *uuid);
 
 /* set text for data entity with uuid; set uuid to NULL to create new */
-int 
+/* return UUID (allocated if uuid is NULL) */
+char * 
 kdata2_set_text_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -120,7 +123,8 @@ kdata2_set_text_for_uuid(
 		const char *uuid);
 
 /* set data for data entity with uuid; set uuid to NULL to create new */
-int 
+/* return UUID (allocated if uuid is NULL) */
+char * 
 kdata2_set_data_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -144,13 +148,20 @@ kdata2_get(
 		void *user_data,
 		int (*callback)(
 			void *user_data,
-			enum KDATA2_TYPE type,
-			const char *column, 
-			void *value,
-			size_t size
+			int	num_cols,
+			enum KDATA2_TYPE types[],
+			const char *columns[], 
+			void *values[],
+			size_t sizes[]
 			)
 		);
 
+// return string value of SQL request
+char *
+kdata2_get_string(
+		kdata2_t * database, 
+		const char *SQL);
+	
 /* init Yandex Disk */
 void _yd_daemon_init(kdata2_t * d);
 
