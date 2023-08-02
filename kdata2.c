@@ -1640,7 +1640,8 @@ char * kdata2_get_string(
 
 	// get first value
 	sqlite3_step(stmt);
-	const char *str = sqlite3_column_name(stmt, 0);
+	const char *str = (const char *)
+		sqlite3_column_text(stmt, 0);
 	if (!str)
 		return NULL;
 	
