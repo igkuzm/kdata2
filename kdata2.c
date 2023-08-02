@@ -1378,7 +1378,8 @@ char * kdata2_set_text_for_uuid(
 		return NULL;
 
 	if (!uuid){
-		char _uuid[37];
+		char *_uuid = malloc(37);
+		if (!_uuid) return NULL;
 		if (uuid_new(_uuid)){
 			if (d->on_error)
 				d->on_error(d->on_error_data, 
