@@ -57,8 +57,8 @@ _remove_local_update(void *user_data, const char *error){
 		return -1;
 	
 	if (error){
-		if (update->d->on_error)
-			update->d->on_error(update->d->on_error_data, 
+		if (update->d->on_log)
+			update->d->on_log(update->d->on_log_data, 
 				STR_ERR("%s", error));
 		return -1;
 	}
