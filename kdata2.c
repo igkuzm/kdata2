@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 02.08.2023
+ * Last Modified Date: 18.08.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -408,6 +408,9 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 			case 4: update->deleted = atoi(buf)     ; break;
 		}
 	}
+
+	if (strlen(update->uuid) < 10)
+		return 0;
 
 	/* set data to use in callback */
 	update->d = d;
