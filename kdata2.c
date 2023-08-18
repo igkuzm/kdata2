@@ -60,7 +60,6 @@ _remove_local_update(void *user_data, const char *error){
 		if (update->d->on_log)
 			update->d->on_log(update->d->on_log_data, 
 				STR_ERR("%s", error));
-		return -1;
 	}
 
 	char *errmsg = NULL;
