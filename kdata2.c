@@ -67,7 +67,7 @@ _remove_local_update(void *user_data, const char *error){
 	char *SQL;
 
 	/* remove from local update table */
-	SQL = STR("DELETE FROM _kdata2_updates WHERE %s = '%s'", UUIDCOLUMN, update->uuid); 
+	SQL = STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", update->uuid); 
 	if (update->d->on_log)
 		update->d->on_log(update->d->on_log_data, 
 				STR_LOG("%s", SQL));
