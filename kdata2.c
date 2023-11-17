@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 18.08.2023
+ * Last Modified Date: 17.11.2023
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -84,12 +84,12 @@ _remove_local_update(void *user_data, const char *error){
 	return 0;
 }
 
-int 
-_after_upload_to_YandexDisk(size_t size, void *user_data, const char *error){
+void 
+_after_upload_to_YandexDisk(void *data, size_t size, void *user_data, const char *error){
 	struct kdata2_update *update = user_data;
 
 	if (!update && !update->d)
-		return -1;
+		return;
 
 	if (error)
 		if (update->d->on_error)
@@ -117,7 +117,7 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, const char *error){
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, sqlite3_errmsg(update->d->db)));		
-		return -1;
+		return;
 	}	
 
 	time_t timestamp = 0;
@@ -128,7 +128,7 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, const char *error){
 
 	/* check timestamp */
 	if (timestamp > update->timestamp)
-		return 1; // need to update again - don't remove from update table
+		return; // need to update again - don't remove from update table
 
 	/* otherwice -> remove from update table and set new timestamp from uploaded file */
 	char *errmsg = NULL;
@@ -152,8 +152,6 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, const char *error){
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("%s", "can't get file"));		
-		
-		return -1;
 	};
 
 	/* set new timestamp to sqlite data */
@@ -170,12 +168,12 @@ _after_upload_to_YandexDisk(size_t size, void *user_data, const char *error){
 				update->d->on_error(update->d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
 			free(errmsg);			
-			return -1;
+			return;
 		}		
 	}
 
 	/* remove local update */
-	return _remove_local_update(update, NULL);
+  _remove_local_update(update, NULL);
 }
 
 void 
@@ -493,13 +491,13 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 	return 0;
 }
 
-int 
-_download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, const char *error){
+void 
+_download_data_from_YandexDisk_to_local_database_cb(void *data, size_t size, void *user_data, const char *error){
 
 	struct kdata2_update *update = user_data;	
 
 	if (!update && !update->d)
-		return -1;
+		return;
 	
 	/* handle error */
 	if (error)
@@ -513,7 +511,7 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("can't allocate memory for SQL string size: %ld", size + BUFSIZ));	
-		return -1;
+		return;
 	}
 
 	/* update local database */
@@ -537,16 +535,14 @@ _download_data_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 
 	/* free SQL string */
 	free(SQL);
-	
-	return 0;
 }
 
-int 
-_download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, void *user_data, const char *error){
+void 
+_download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, void *user_data, const char *error){
 	struct kdata2_update *update = user_data;	
 
 	if (!update && !update->d)
-		return -1;
+		return;
 	
 	/* handle error */
 	if (error)
@@ -561,7 +557,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("%s", "can't parse json file"));			
 		free(update);
-		return 1;
+		return;
 	}
 
 	/* get tablename */
@@ -572,7 +568,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 				STR_ERR("%s", "can't get tablename from json file"));		
 		cJSON_free(json);
 		free(update);
-		return 1;
+		return;
 	}
 
 	strncpy(update->table, cJSON_GetStringValue(tablename), 127);
@@ -586,7 +582,7 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 				STR_ERR("%s", "can't get columns from json file"));		
 		cJSON_free(json);
 		free(update);
-		return 1;
+		return;
 	}
 	
 	/* udate local database */
@@ -721,13 +717,11 @@ _download_json_from_YandexDisk_to_local_database_cb(size_t size, void *data, voi
 
 	/* free update */
 	free(update);
-
-	return 0;
 } 
 
 
 void
-_download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
+_download_from_YandexDisk_to_local_database(kdata2_t * d, const c_yd_file_t *file){
 	/*
 	 * 1. get json data
 	 * 2. update local data for number and text datatype
@@ -759,7 +753,7 @@ _download_from_YandexDisk_to_local_database(kdata2_t * d, c_yd_file_t *file){
 }
 
 static int 
-_for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, const char * error){
+_for_each_file_in_YandexDisk_database(const c_yd_file_t *file, void * user_data, const char * error){
 	kdata2_t *d = user_data;
 
 	if (!d)
@@ -833,7 +827,7 @@ _for_each_file_in_YandexDisk_database(c_yd_file_t *file, void * user_data, const
 }
 
 int 
-_for_each_file_in_YandexDisk_deleted(c_yd_file_t *file, void * user_data, const char * error){
+_for_each_file_in_YandexDisk_deleted(const c_yd_file_t *file, void * user_data, const char * error){
 	kdata2_t *d = user_data;
 
 	if (!d)
