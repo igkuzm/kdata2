@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 17.11.2023
+ * Last Modified Date: 07.09.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -80,7 +80,7 @@ _remove_local_update(void *user_data, const char *error){
 	}	
 
 	/* free struct update */
-	free(update);
+	//free(update);
 	return 0;
 }
 
@@ -97,8 +97,8 @@ _after_upload_to_YandexDisk(void *data, size_t size, void *user_data, const char
 				STR_ERR("%s", error));
 	
 	/* free data */
-	if (update->data_to_free)
-		free(update->data_to_free);
+	//if (update->data_to_free)
+		//free(update->data_to_free);
 
 	/* Need to check if timestamp of current update is equal to update in SQLite table */
 	/* if it is - remove from update table */
@@ -146,7 +146,7 @@ _after_upload_to_YandexDisk(void *data, size_t size, void *user_data, const char
 			if (update->d->on_error)
 				update->d->on_error(update->d->on_error_data, 
 					STR_ERR("%s", errmsg));			
-			free(errmsg);
+			//free(errmsg);
 		}
 		
 		if (update->d->on_error)
@@ -167,7 +167,7 @@ _after_upload_to_YandexDisk(void *data, size_t size, void *user_data, const char
 			if (update->d->on_error)
 				update->d->on_error(update->d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-			free(errmsg);			
+			//free(errmsg);			
 			return;
 		}		
 	}
@@ -335,7 +335,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 					cJSON_AddItemToObject(column, "value", cJSON_CreateString(buf));
 
 					/* free buf */
-					free(buf);
+					//free(buf);
 				} else if (type == KDATA2_TYPE_NUMBER){
 					long number = sqlite3_column_int64(stmt, i);					
 					cJSON_AddItemToObject(column, "value", cJSON_CreateNumber(number));
@@ -367,7 +367,7 @@ _upload_local_data_to_Yandex_Disk(struct kdata2_update *update){
 					update, _after_upload_to_YandexDisk, NULL, NULL);	
 
 	/* free json */
-	cJSON_free(json);
+	//cJSON_free(json);
 }
 
 int 
@@ -443,7 +443,7 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 				update->d->on_error(update->d->on_error_data, 
 					STR_ERR("%s", 
 						"Unauthorized to Yandex Disk"));					
-			free(update);
+			//free(update);
 			return 0;
 		}
 	}
@@ -469,14 +469,14 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 					update->d->on_log(update->d->on_log_data, 
 							STR_LOG("_upload_local_data_to_Yandex_Disk: %s", 
 								update->uuid));	
-				free(errmsg);
+				//free(errmsg);
 				return 0;
 			} else {
 				if (update->d->on_error)
 					update->d->on_error(update->d->on_error_data, 
 						STR_ERR("%s", errmsg));	
-				free(update);
-				free(errmsg);
+				//free(update);
+				//free(errmsg);
 				return -1;
 			}
 		}
@@ -484,7 +484,7 @@ _for_each_update_in_SQLite(void *user_data, int argc, char **argv, char **titles
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("%s", "unknown error"));	
 			
-		free(update);
+		//free(update);
 		return -1;
 	}	
 
@@ -530,11 +530,11 @@ _download_data_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
-		free(errmsg);
+		//free(errmsg);
 	}
 
 	/* free SQL string */
-	free(SQL);
+	//free(SQL);
 }
 
 void 
@@ -556,7 +556,7 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("%s", "can't parse json file"));			
-		free(update);
+		//free(update);
 		return;
 	}
 
@@ -566,8 +566,8 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("%s", "can't get tablename from json file"));		
-		cJSON_free(json);
-		free(update);
+		//cJSON_free(json);
+		//free(update);
 		return;
 	}
 
@@ -580,8 +580,8 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("%s", "can't get columns from json file"));		
-		cJSON_free(json);
-		free(update);
+		//cJSON_free(json);
+		//free(update);
 		return;
 	}
 	
@@ -608,7 +608,7 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
-		free(errmsg);
+		//free(errmsg);
 	}
 
 	/* get values for each column and update local database */
@@ -671,7 +671,7 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 					if (update->d->on_error)
 						update->d->on_error(update->d->on_error_data, 
 								STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));	
-					free(errmsg);
+					//free(errmsg);
 					errmsg = NULL;
 				}
 			} else if (cJSON_GetNumberValue(type) == KDATA2_TYPE_FLOAT){
@@ -688,7 +688,7 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 					if (update->d->on_error)
 						update->d->on_error(update->d->on_error_data, 
 								STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));	
-					free(errmsg);
+					//free(errmsg);
 					errmsg = NULL;
 				}
 			} else {
@@ -705,7 +705,7 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 					if (update->d->on_error)
 						update->d->on_error(update->d->on_error_data, 
 								STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));	
-					free(errmsg);
+					//free(errmsg);
 					errmsg = NULL;
 				}
 			}
@@ -713,10 +713,10 @@ _download_json_from_YandexDisk_to_local_database_cb(void *data, size_t size, voi
 	}
 
 	/* free json */
-	cJSON_free(json);
+	//cJSON_free(json);
 
 	/* free update */
-	free(update);
+	//free(update);
 } 
 
 
@@ -863,7 +863,7 @@ _for_each_file_in_YandexDisk_deleted(const c_yd_file_t *file, void * user_data, 
 			if (d->on_error)
 				d->on_error(d->on_error_data, 
 						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));		
-			free(errmsg);
+			//free(errmsg);
 		}		
 	}
 	
@@ -902,7 +902,7 @@ void _yd_update(kdata2_t *d){
 		if (d->on_log)
 			d->on_log(d->on_log_data, 
 					STR_LOG("%s", errmsg));		
-		free(errmsg);		
+		//free(errmsg);		
 		return;
 	}	
 
@@ -920,7 +920,7 @@ void _yd_update(kdata2_t *d){
 		if (d->on_log)
 			d->on_log(d->on_log_data, 
 					STR_LOG("sqlite3_exec: %s: %s", SQL, errmsg));		
-		free(errmsg);		
+		//free(errmsg);		
 		return;
 	}	
 
@@ -1148,7 +1148,7 @@ int kdata2_init(
 			if (on_error)
 				on_error(on_error_data, 
 						STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-			free(errmsg);
+			//free(errmsg);
 			return -1;
 		}
 		
@@ -1159,7 +1159,7 @@ int kdata2_init(
 			if (on_log)
 				on_log(on_log_data, 
 						STR_LOG("sqlite3_exec: %s: %s", SQL, errmsg));			
-			free(errmsg);
+			//free(errmsg);
 			errmsg = NULL;
 		}
 
@@ -1169,7 +1169,7 @@ int kdata2_init(
 			if (on_log)
 				on_log(on_log_data, 
 						STR_LOG("sqlite3_exec: %s: %s", SQL, errmsg));			
-			free(errmsg);
+			//free(errmsg);
 			errmsg = NULL;
 		}
 	}
@@ -1195,7 +1195,7 @@ int kdata2_init(
 		if (on_error)
 			on_error(on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return -1;
 	}
 
@@ -1259,7 +1259,7 @@ kdata2_set_number_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}
 
@@ -1281,7 +1281,7 @@ kdata2_set_number_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}
 
@@ -1334,7 +1334,7 @@ char * kdata2_set_float_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}
 
@@ -1356,7 +1356,7 @@ char * kdata2_set_float_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}
 
@@ -1409,7 +1409,7 @@ char * kdata2_set_text_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}
 
@@ -1431,7 +1431,7 @@ char * kdata2_set_text_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}
 	
@@ -1492,7 +1492,7 @@ char * kdata2_set_data_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}	
 
@@ -1503,7 +1503,7 @@ char * kdata2_set_data_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, errmsg));		
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}	
 
@@ -1542,7 +1542,7 @@ char * kdata2_set_data_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}	
 
@@ -1576,7 +1576,7 @@ int kdata2_remove_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return -1;
 	}	
 
@@ -1598,7 +1598,7 @@ int kdata2_remove_for_uuid(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_exec: %s: %s", SQL, errmsg));			
-		free(errmsg);
+		//free(errmsg);
 		return -1;
 	}	
 	
@@ -1630,7 +1630,7 @@ char * kdata2_get_string(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, errmsg));		
-		free(errmsg);
+		//free(errmsg);
 		return NULL;
 	}	
 
@@ -1689,7 +1689,7 @@ void kdata2_get(
 		if (d->on_error)
 			d->on_error(d->on_error_data, 
 					STR_ERR("sqlite3_prepare_v2: %s: %s", SQL, errmsg));		
-		free(errmsg);
+		//free(errmsg);
 		return;
 	}	
 
@@ -1770,7 +1770,7 @@ int kdata2_close(kdata2_t *d){
 	if (d->db)
 		sqlite3_close(d->db);
 
-	free(d);
+	//free(d);
 	return 0;
 }
 
