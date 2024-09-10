@@ -9,7 +9,7 @@ libkdata2_la_SOURCES = \
 
 if WINDOWS
 libkdata2_la_SOURCES += sqlite3.c sqlite3.h
-CYD_LINK = -lcYandexDiak -LcYandexDisk/.libs
+CYD_LINK = -lcYandexDisk -LcYandexDisk/.libs
 else
 SQLITE3_LINK = -lsqlite3
 CURL_LINK   = -lcurl

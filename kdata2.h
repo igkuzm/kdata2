@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 02.08.2023
+ * Last Modified Date: 10.09.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -20,6 +20,7 @@ extern "C" {
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include "sqlite3.h"
 
 #ifndef UUIDCOLUMN
@@ -58,6 +59,8 @@ typedef struct kdata2 {
 	sqlite3 *db;                   // sqlite3 database pointer
 	char filepath[BUFSIZ];         // file path to where store SQLite data 	
 	char access_token[64];         // Yandex Disk access token
+	bool do_update;                // set to false to stop
+																 // update in thread
 	struct kdata2_table ** tables; // NULL-terminated array of tables pointers
 	int sec;				       // number of seconds of delay to sinc data with Yandex Disk
 	pthread_t tid;                 // Yandex Disk daemon thread id

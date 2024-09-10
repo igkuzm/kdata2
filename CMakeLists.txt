@@ -11,7 +11,7 @@ if (NOT DEFINED KDATA2_SOURCE_DIR)
 endif ()
 
 project(
-	${TARGET} VERSION 1.0 
+	${TARGET} VERSION 1.1 
 	DESCRIPTION "C library for SQLite database with Yandex Disk sync"
 	HOMEPAGE_URL ""
 	LANGUAGES C 
