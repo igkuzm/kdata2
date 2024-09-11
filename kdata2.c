@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 10.09.2024
+ * Last Modified Date: 11.09.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -898,7 +898,7 @@ static void * _yd_thread(void * data)
 	if (!d)
 		return NULL;
 
-	while (d->do_update) {
+	while (d && d->do_update) {
 		ON_LOG(d, "updating data...");	
 		_yd_update(d);
 		sleep(d->sec);
@@ -909,22 +909,14 @@ static void * _yd_thread(void * data)
 
 void _yd_daemon_init(kdata2_t * d)
 {
-	int err;
-
-	//pthread_t tid; //thread id
-	pthread_attr_t attr; //thread attributives
-	
-	err = pthread_attr_init(&attr);
-	if (err) {
-		ON_ERR(d, STR("can't set thread attributes: %d", err));		
+	if (!d)
 		return;
-	}	
 	d->do_update = true;
 	
 	//create new thread
-	err = pthread_create(
+	int err = pthread_create(
 			&(d->tid), 
-			&attr, 
+			NULL, 
 			_yd_thread, 
 			d);
 	if (err) {
