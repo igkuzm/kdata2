@@ -839,7 +839,7 @@ void _yd_update(kdata2_t *d){
 	 * 7. get list of deleted in Yandex Disk
 	 * 8. remove local data for deleted */
 
-	if (!d)
+	if (!d || d->access_token[0] == 0)
 		return;
 	
 	ON_LOG(d, "c_yandex_disk_file_info: app:/");	
