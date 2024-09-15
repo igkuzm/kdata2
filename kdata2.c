@@ -1100,13 +1100,11 @@ int kdata2_init(
 		/* add columns */
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN %s TEXT;", 
 				table->tablename, UUIDCOLUMN);
-		if (kdata2_sqlite3_exec(d, SQL))
-			return -1;
+		kdata2_sqlite3_exec(d, SQL);
 
 		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", 
 				table->tablename);
-		if (kdata2_sqlite3_exec(d, SQL))
-			return -1;
+		kdata2_sqlite3_exec(d, SQL);
 	}
 
 	/* create table to store updates */
