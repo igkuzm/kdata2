@@ -131,8 +131,9 @@ void _after_upload_to_YandexDisk(
 	//if (update->data_to_free)
 		//free(update->data_to_free);
 
-	/* Need to check if timestamp of current update is equal to update in SQLite table */
-	/* if it is - remove from update table */
+	/* Need to check if timestamp of current
+	   update is equal to update in SQLite table
+	   if it is - remove from update table */
 
 	/* get timestamp from sqlite table */
 	sqlite3_stmt *stmt;
@@ -830,12 +831,15 @@ int _for_each_file_in_YandexDisk_deleted(
 
 void _yd_update(kdata2_t *d){
 	/* To update data:
-	 * 1. get list of updates in update and deleted table in local database with timestamps
+	 * 1. get list of updates in update and deleted table in local database
+	 with timestamps
 	 * 2. check timestamp of data in Yandex Disk
-	 * 3. upload local data to Yandex Disk if local timestamp >, or data is deleted
+	 * 3. upload local data to Yandex Disk if local timestamp >, or data is
+	 deleted
 	 * 4. remove data from local updates (deleted) table
 	 * 5. get list of updates in remote YandexDisk
-	 * 6. download data from Yandex Disk if timestamp > or local data is not exists
+	 * 6. download data from Yandex Disk if timestamp > or local data is not
+	 exists
 	 * 7. get list of deleted in Yandex Disk
 	 * 8. remove local data for deleted */
 
