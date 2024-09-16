@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 11.09.2024
+ * Last Modified Date: 16.09.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -1556,9 +1556,10 @@ void kdata2_get(
 			}
 			// do callback
 			if (callback){
-				if (callback(user_data, num_cols, types, columns, values, sizes)){
-					sqlite3_finalize(stmt);
-					return;
+				if (callback(user_data, num_cols, types, columns, values, sizes))
+				{
+				   sqlite3_finalize(stmt);
+				   return;
 				}
 			}
 		}
