@@ -94,7 +94,7 @@ int _remove_local_update(
 {
 	struct kdata2_update *update = data;
 	if (!update && !update->d)
-		return -1;
+	  return -1;
 	
 	if (error){
 		ON_ERR(update->d, error);
