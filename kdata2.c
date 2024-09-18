@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 16.09.2024
+ * Last Modified Date: 18.09.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -43,7 +43,7 @@ struct kdata2_update {
 	char column[128];
 };
 
-static int uuid_new(char uuid[37]){
+int uuid_new(char uuid[37]){
 	UUID4_STATE_T state; UUID4_T identifier;
 	uuid4_seed(&state);
 	uuid4_gen(&state, &identifier);
