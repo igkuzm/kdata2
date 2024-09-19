@@ -1080,29 +1080,37 @@ int kdata2_init(
 
 			/* create SQL string */
 			switch (col->type) {
+				case KDATA2_TYPE_NULL:
+					break;
 				case KDATA2_TYPE_NUMBER:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s INT;", 
 							table->tablename, col->columnname);
+					kdata2_sqlite3_exec(d, SQL);
+					break;
 				case KDATA2_TYPE_TEXT:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s TEXT;", 
 							table->tablename, col->columnname);
+					kdata2_sqlite3_exec(d, SQL);
+					break;
 				case KDATA2_TYPE_DATA:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s BLOB;", 
 							table->tablename, col->columnname);
+					kdata2_sqlite3_exec(d, SQL);
+					break;
 				case KDATA2_TYPE_FLOAT:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s REAL;", 
 							table->tablename, col->columnname);
-				default: continue;
+					kdata2_sqlite3_exec(d, SQL);
+					break;
 			}
-			kdata2_sqlite3_exec(d, SQL);
 		}
 	}
 
