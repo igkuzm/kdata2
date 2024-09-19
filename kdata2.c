@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 18.09.2024
+ * Last Modified Date: 19.09.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -1056,8 +1056,12 @@ int kdata2_init(
 		if (table->tablename[0] == 0)
 			continue;
 
-		/* add to SQL string */
-		sprintf(SQL, "CREATE TABLE IF NOT EXISTS %s ( ", table->tablename);
+		/* create SQL string */
+		sprintf(SQL, 
+				"CREATE TABLE IF NOT EXISTS %s "
+								"(%s TEXT, timestamp INT)"
+								, table->tablename, UUIDCOLUMN);
+		kdata2_sqlite3_exec(d, SQL);
 
 		struct kdata2_column ** col_ptr = table->columns; // pointer to iterate
 		while (*col_ptr) {
@@ -1074,41 +1078,32 @@ int kdata2_init(
 					|| strcmp(col->columnname, "timestamp") == 0)
 				continue;
 
-			/* append SQL string */
-			strcat(SQL, col->columnname);
-			strcat(SQL, " ");
+			/* create SQL string */
 			switch (col->type) {
 				case KDATA2_TYPE_NUMBER:
-					strcat(SQL, "INT"); break;
+					sprintf(SQL, 
+							"ALTER TABLE '%s' "
+											"ADD COLUMN %s INT;", 
+							table->tablename, col->columnname);
 				case KDATA2_TYPE_TEXT:
-					strcat(SQL, "TEXT"); break;
+					sprintf(SQL, 
+							"ALTER TABLE '%s' "
+											"ADD COLUMN %s TEXT;", 
+							table->tablename, col->columnname);
 				case KDATA2_TYPE_DATA:
-					strcat(SQL, "BLOB"); break;
+					sprintf(SQL, 
+							"ALTER TABLE '%s' "
+											"ADD COLUMN %s BLOB;", 
+							table->tablename, col->columnname);
 				case KDATA2_TYPE_FLOAT:
-					strcat(SQL, "REAL"); break;
+					sprintf(SQL, 
+							"ALTER TABLE '%s' "
+											"ADD COLUMN %s REAL;", 
+							table->tablename, col->columnname);
 				default: continue;
 			}
-
-			/* append ',' */
-			if (*col_ptr)
-				strcat(SQL, ", ");
+			kdata2_sqlite3_exec(d, SQL);
 		}
-		/* add uuid column */
-		//strcat(SQL, "uuid TEXT, timestamp INT)");
-		strcat(SQL, ")");
-		
-		/* run SQL command */
-		if (kdata2_sqlite3_exec(d, SQL))
-			return -1;
-		
-		/* add columns */
-		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN %s TEXT;", 
-				table->tablename, UUIDCOLUMN);
-		kdata2_sqlite3_exec(d, SQL);
-
-		sprintf(SQL, "ALTER TABLE '%s' ADD COLUMN timestamp INT;", 
-				table->tablename);
-		kdata2_sqlite3_exec(d, SQL);
 	}
 
 	/* create table to store updates */
