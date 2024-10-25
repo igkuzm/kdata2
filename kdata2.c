@@ -1059,8 +1059,19 @@ int kdata2_init(
 		/* create SQL string */
 		sprintf(SQL, 
 				"CREATE TABLE IF NOT EXISTS %s "
-								"(%s TEXT, timestamp INT)"
-								, table->tablename, UUIDCOLUMN);
+								, table->tablename);
+		kdata2_sqlite3_exec(d, SQL);
+
+		sprintf(SQL, 
+							"ALTER TABLE '%s' "
+											"ADD COLUMN %s TEXT;", 
+							table->tablename, UUIDCOLUMN);
+		kdata2_sqlite3_exec(d, SQL);
+
+		sprintf(SQL, 
+							"ALTER TABLE '%s' "
+											"ADD COLUMN timestamp INT;", 
+							table->tablename, UUIDCOLUMN);
 		kdata2_sqlite3_exec(d, SQL);
 
 		struct kdata2_column ** col_ptr = table->columns; // pointer to iterate
