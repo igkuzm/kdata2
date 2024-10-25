@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 08.10.2024
+ * Last Modified Date: 25.10.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -1087,32 +1087,32 @@ int kdata2_init(
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s INT;", 
 							table->tablename, col->columnname);
-					//kdata2_sqlite3_exec(d, SQL);
-					sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
+					kdata2_sqlite3_exec(d, SQL);
+					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
 					break;
 				case KDATA2_TYPE_TEXT:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s TEXT;", 
 							table->tablename, col->columnname);
-					//kdata2_sqlite3_exec(d, SQL);
-					sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
+					kdata2_sqlite3_exec(d, SQL);
+					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
 					break;
 				case KDATA2_TYPE_DATA:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s BLOB;", 
 							table->tablename, col->columnname);
-					//kdata2_sqlite3_exec(d, SQL);
-					sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
+					kdata2_sqlite3_exec(d, SQL);
+					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
 					break;
 				case KDATA2_TYPE_FLOAT:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
 											"ADD COLUMN %s REAL;", 
 							table->tablename, col->columnname);
-					//kdata2_sqlite3_exec(d, SQL);
-					sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
+					kdata2_sqlite3_exec(d, SQL);
+					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
 					break;
 			}
 		}
