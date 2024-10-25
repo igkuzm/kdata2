@@ -1058,7 +1058,7 @@ int kdata2_init(
 
 		/* create SQL string */
 		sprintf(SQL, 
-				"CREATE TABLE IF NOT EXISTS %s "
+				"CREATE TABLE IF NOT EXISTS %s ()"
 								, table->tablename);
 		kdata2_sqlite3_exec(d, SQL);
 
