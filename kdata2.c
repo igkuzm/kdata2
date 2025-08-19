@@ -43,7 +43,7 @@ struct kdata2_update {
 	char column[128];
 };
 
-int uuid_new(char uuid[37]){
+int uuid_new(char *uuid){
 	uuid4_init();
 	uuid4_generate(uuid);
 
