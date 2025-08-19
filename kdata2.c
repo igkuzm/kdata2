@@ -44,12 +44,8 @@ struct kdata2_update {
 };
 
 int uuid_new(char uuid[37]){
-	UUID4_STATE_T state; UUID4_T identifier;
-	uuid4_seed(&state);
-	uuid4_gen(&state, &identifier);
-	if (!uuid4_to_s(identifier, uuid, 37)){
-		return -1;
-	}
+	uuid4_init();
+	uuid4_generate(uuid);
 
 	return 0;
 }
