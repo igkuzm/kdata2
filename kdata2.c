@@ -1140,8 +1140,7 @@ int kdata2_init(
 
 	/* run SQL command */
 	ON_LOG(d, SQL);
-	if (kdata2_sqlite3_exec(d, SQL))
-		return -1;
+	kdata2_sqlite3_exec(d, SQL);
 
 	/* if no token */
 	if (!access_token)
