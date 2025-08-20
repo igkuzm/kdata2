@@ -24,7 +24,7 @@ extern "C" {
 #include "sqlite3.h"
 
 #ifndef UUIDCOLUMN
-#define UUIDCOLUMN "uuid"
+#define UUIDCOLUMN "ZRECORDNAME"
 #endif /* ifndef UUIDCOLUMN */
 
 #define DATABASE  "kdata_database"
