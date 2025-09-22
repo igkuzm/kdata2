@@ -10,6 +10,8 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_PROG_CC
 AC_PROG_CXX
 
+AC_CONFIG_SRCDIR
+
 AC_CANONICAL_HOST
 case "${host_os}" in
     cygwin*|mingw*)

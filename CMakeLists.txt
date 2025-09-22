@@ -36,6 +36,7 @@ add_library(${TARGET} STATIC
 )
 
 if(WIN32)
+		INCLUDE_DIRECTORIES(${CYANDEXDISK_SOURCE_DIR}/pthreads-win32/include)	
 elseif(APPLE)
 else()
 	if (NOT ANDROID)
