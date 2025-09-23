@@ -24,6 +24,10 @@
 #include "cYandexDisk/alloc.h"
 #include "cYandexDisk/log.h"
 
+#ifdef __WIN32__
+#include <windows.h>
+#endif
+
 #define ON_ERR(ptr, msg) \
 	({if (ptr->on_error) ptr->on_error(ptr->on_error_data, msg);})
 #define ON_LOG(ptr, msg) \
@@ -902,6 +906,11 @@ static void * _yd_thread(void * data)
 		ON_LOG(d, "updating data...");	
 		_yd_update(d);
 		sleep(d->sec);
+#ifdef __WIN32__
+			Sleep(d->sec*1000);
+#else
+			sleep(d->sec);
+#endif
 	}
 
 	pthread_exit(0);	
