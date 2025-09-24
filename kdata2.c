@@ -905,7 +905,6 @@ static void * _yd_thread(void * data)
 	while (d && d->do_update) {
 		ON_LOG(d, "updating data...");	
 		_yd_update(d);
-		sleep(d->sec);
 #ifdef __WIN32__
 			Sleep(d->sec*1000);
 #else
