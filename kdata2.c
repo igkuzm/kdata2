@@ -290,13 +290,13 @@ void _upload_local_data_to_Yandex_Disk(
 				memcpy(buf, value, len);
 
 				/* allocate new struct update for thread */
-				struct kdata2_update *new_update = 
-					NEW(struct kdata2_update,
+				struct kdata2_update *new_update = NEW(struct kdata2_update);
+				if (new_updade == NULL){
 					ON_ERR(update->d,
 						STR("%s", 
 							"can't allocate memory for struct kdata2_update"));
 						break
-					);					
+				};					
 					
 				new_update->d = update->d;
 				strcpy(new_update->column, update->column);
@@ -400,13 +400,13 @@ int _for_each_update_in_SQLite(
 		return 0; // return 0 - do not interrupt SQL
 
 	/* new kdata_update */
-	struct kdata2_update *update = 
-		NEW(struct kdata2_update,
+	struct kdata2_update *update =NEW(struct kdata2_update);
+	if (update == NULL){
 			ON_ERR(d,
 			STR("%s", 
 				"can't allocate memory for struct kdata2_update"));					
 		return 0; // return 0 - do not interrupt SQL
-	);
+	};
 
 	int i;
 	for (i = 0; i < argc; ++i) {
@@ -708,11 +708,11 @@ void _download_from_YandexDisk_to_local_database(
 	 * 3. download and update data for datatype data */
 
 	/* allocate struct and fill update */
-	struct kdata2_update *update = NEW(struct kdata2_update,
-		if (!update)
-			ON_ERR(d, "can't allocate memory for struct kdata2_update");		
+	struct kdata2_update *update = NEW(struct kdata2_update);
+	if (update == NULL){
+		ON_ERR(d, "can't allocate memory for struct kdata2_update");		
 		return;
-	);
+	};
 	
 	update->d = d;
 	STRCOPY(update->uuid, file->name); 
@@ -972,11 +972,12 @@ int kdata2_init(
 		return -1;
 	}
 	/* allocate kdata2_t */
-	kdata2_t *d = NEW(kdata2_t,
+	kdata2_t *d = NEW(kdata2_t);
+	if (d == NULL){
 		if (on_error)
 			on_error(on_error_data, "can't allocate kdata2_t");			
 		return -1;
-		);
+	};
 	*database = d;
 	
 	/* set callbacks to NULL */
@@ -1621,9 +1622,9 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	}
 	
 	/* allocate new table */
-	*t = NEW(struct kdata2_table,
+	*t = NEW(struct kdata2_table);
+	if (t == NULL)
 		return -1;
-	);
 	
 	// pointer to collumns
 	struct kdata2_column **columns = malloc(8);
@@ -1652,9 +1653,9 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	while (type != KDATA2_TYPE_NULL && columnname != NULL){
 
 		/* allocate new column */
-		struct kdata2_column *new = NEW(struct kdata2_column,
+		struct kdata2_column *new = NEW(struct kdata2_column);
+		if (new == NULL)	
 			break;
-		);
 
 		/* set column attributes */
 		STRCOPY(new->columnname, columnname);
