@@ -608,7 +608,7 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 			cJSON_GetStringValue(tablename));
 
 	/* get columns */
-	cJSONcolumns = cJSON_GetObjectItem(json, "columns");
+	columns = cJSON_GetObjectItem(json, "columns");
 	if (!columns || !cJSON_IsArray(columns))
 	{
 		ON_ERR(update->d, "can't get columns from json file");
@@ -970,7 +970,7 @@ int kdata2_init(
 		...
 		)
 {
-	int err = 0;
+	int err = 0, tcount = 0;
 	char *errmsg = NULL;
 	kdata2_t *d;
 	va_list args;
@@ -1054,7 +1054,6 @@ int kdata2_init(
 		ON_ERR(d, "can't allocate kdata2_t_table");		
 		return -1;
 	}
-	int tcount = 0;
 
 	//init va_args
 	va_start(args, sec);
@@ -1379,6 +1378,7 @@ char * kdata2_set_data_for_uuid(
 {
 	time_t timestamp = time(NULL);
 	char SQL[BUFSIZ];
+	sqlite3_stmt *stmt;
 
 	if (!d)
 		return NULL;
@@ -1413,7 +1413,6 @@ char * kdata2_set_data_for_uuid(
 	
 	sprintf(SQL, "UPDATE '%s' SET '%s' = (?) WHERE %s = '%s'", tablename, column, UUIDCOLUMN, uuid);
 	
-	sqlite3_stmt *stmt;
 	if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
 		return NULL;
 
