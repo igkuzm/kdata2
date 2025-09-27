@@ -129,6 +129,7 @@ void _after_upload_to_YandexDisk(
 	struct kdata2_update *update = user_data;
 	sqlite3_stmt *stmt;
 	char *SQL, *errmsg = NULL;
+	c_yd_file_t file;
 
 	if (!update && !update->d)
 		return;
@@ -171,7 +172,6 @@ void _after_upload_to_YandexDisk(
 			STR("c_yandex_disk_file_info: app:/%s/%s", 
 				DATABASE, update->uuid));	
 
-	c_yd_file_t file;
 	if (c_yandex_disk_file_info(update->d->access_token, 
 				STR("app:/%s/%s", 
 					DATABASE, update->uuid), &file, &errmsg))
@@ -198,7 +198,7 @@ void _after_upload_to_YandexDisk(
 void _upload_local_data_to_Yandex_Disk(
 		struct kdata2_update *update)
 {
-	cJSON *json;
+	cJSON *json, *columns;
 	char *SQL, *data;
 	sqlite3_stmt *stmt;
 	/* 1. get data from SQLite
@@ -218,7 +218,7 @@ void _upload_local_data_to_Yandex_Disk(
 	}
 	cJSON_AddItemToObject(json, "tablename",
 			cJSON_CreateString(update->table));
-	cJSON *columns = cJSON_CreateArray();
+	columns = cJSON_CreateArray();
 	if (!columns){
 		ON_ERR(update->d,
 				STR("can't cJSON_CreateArray for table: %s", 
@@ -284,6 +284,7 @@ void _upload_local_data_to_Yandex_Disk(
 				size_t len;
 				const void *value;
 				char data_id[37+128];
+				struct kdata2_update *new_update;
 
 				sprintf(data_id, "%s_%s",update->uuid, title);	
 				
@@ -304,7 +305,7 @@ void _upload_local_data_to_Yandex_Disk(
 				memcpy(buf, value, len);
 
 				/* allocate new struct update for thread */
-				struct kdata2_update *new_update = NEW(struct kdata2_update);
+				new_update = NEW(struct kdata2_update);
 				if (new_update == NULL){
 					ON_ERR(update->d,
 						STR("%s", 
@@ -646,10 +647,13 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 			continue;
 		}		
 		if (cJSON_GetNumberValue(type) == KDATA2_TYPE_DATA) {
+
+			cJSON *data;
+
 			/* download data from Yandex Disk */
 			STRCOPY(update->column, cJSON_GetStringValue(name));
 
-			cJSON *data = cJSON_GetObjectItem(column, "data");
+			data = cJSON_GetObjectItem(column, "data");
 			if (!data){
 				ON_ERR(update->d, "can't get column data from json file");			
 				continue;
