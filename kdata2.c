@@ -559,7 +559,7 @@ void _download_data_from_YandexDisk_to_local_database_cb(
 	};
 
 	/* update local database */
-	snprintf(SQL, size + BUFSIZ-1,
+	sprintf(SQL, 
 			"UPDATE '%s' SET '%s' = '%s' WHERE %s = '%s'", update->table, UUIDCOLUMN, 
 					update->column, 
 							(char*)data, update->uuid		
