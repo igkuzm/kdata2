@@ -83,11 +83,11 @@ static int kdata2_sqlite3_exec(
 static int kdata2_sqlite3_prepare_v2(
 		kdata2_t *d, const char *sql, sqlite3_stmt **stmt)
 {
+	int res;
 	char *errmsg = NULL;
 	ON_LOG(d, sql);
 
-	int res = 
-		sqlite3_prepare_v2(d->db, sql, -1, stmt, NULL);
+	res = sqlite3_prepare_v2(d->db, sql, -1, stmt, NULL);
 	if (res != SQLITE_OK) {
 		ON_ERR(d,
 				STR("sqlite3_prepare_v2: %s: %s", 
@@ -100,6 +100,7 @@ static int kdata2_sqlite3_prepare_v2(
 int _remove_local_update(
 		void *data, const char *error)
 {
+	char *SQL;
 	struct kdata2_update *update = data;
 	if (!update && !update->d)
 	  return -1;
@@ -110,8 +111,7 @@ int _remove_local_update(
 	}
 
 	/* remove from local update table */
-	char *SQL = 
-		STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", 
+	SQL = STR("DELETE FROM _kdata2_updates WHERE uuid = '%s'", 
 				update->uuid); 
 
 	if (kdata2_sqlite3_exec(update->d, SQL))
@@ -125,7 +125,10 @@ void _after_upload_to_YandexDisk(
 		void *data, size_t size, 
 		void *user_data, const char *error)
 {
+	time_t timestamp = 0;
 	struct kdata2_update *update = user_data;
+	sqlite3_stmt *stmt;
+	char *SQL, *errmsg = NULL;
 
 	if (!update && !update->d)
 		return;
@@ -144,16 +147,14 @@ void _after_upload_to_YandexDisk(
 	   if it is - remove from update table */
 
 	/* get timestamp from sqlite table */
-	sqlite3_stmt *stmt;
 	
-	char *SQL = STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
+	SQL = STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
 						update->table, UUIDCOLUMN, update->uuid);
 	ON_LOG(update->d, SQL);
 
 	if (kdata2_sqlite3_prepare_v2(update->d, SQL, &stmt))
 		return;
 	
-	time_t timestamp = 0;
 	while (sqlite3_step(stmt) != SQLITE_DONE)
 		timestamp = sqlite3_column_int64(stmt, 0);
 
@@ -164,7 +165,6 @@ void _after_upload_to_YandexDisk(
 		return; // need to update again - don't remove from update table
 
 	/* otherwice -> remove from update table and set new timestamp from uploaded file */
-	char *errmsg = NULL;
 	
 	/* get uploaded file*/
 	ON_LOG(update->d, 
@@ -198,6 +198,9 @@ void _after_upload_to_YandexDisk(
 void _upload_local_data_to_Yandex_Disk(
 		struct kdata2_update *update)
 {
+	cJSON *json;
+	char *SQL, *data;
+	sqlite3_stmt *stmt;
 	/* 1. get data from SQLite
 	 * 2. create JSON
 	 * 3. upload JSON and data
@@ -207,7 +210,7 @@ void _upload_local_data_to_Yandex_Disk(
 		return;
 
 	/* create json */
-	cJSON *json = cJSON_CreateObject();
+	json = cJSON_CreateObject();
 	if (!json){
 		ON_ERR(update->d,
 				STR("%s", "can't cJSON_CreateObject"));			
@@ -223,27 +226,27 @@ void _upload_local_data_to_Yandex_Disk(
 		return;
 	}	
 
-	char *SQL = 
-		STR("SELECT * FROM '%s' WHERE %s = '%s'", 
+	SQL = STR("SELECT * FROM '%s' WHERE %s = '%s'", 
 				update->table, UUIDCOLUMN, update->uuid);
 	ON_LOG(update->d, SQL);
 
-	sqlite3_stmt *stmt;
 	if (kdata2_sqlite3_prepare_v2(update->d, SQL, 
 				&stmt))
 		return;
 	
 	while (sqlite3_step(stmt) != SQLITE_DONE) {
 		
-		int num_cols = sqlite3_column_count(stmt); //number of colums
+		int i, num_cols = sqlite3_column_count(stmt); //number of colums
 		
 		/* iterate columns */
-		int i;
 		for (i = 0; i < num_cols; ++i) {
 			/* get datatype */
 			enum KDATA2_TYPE type;
-			
+			cJSON *column;
+			const char *title;
+			void *buf;
 			int col_type = sqlite3_column_type(stmt, i);
+
 			switch (col_type) {
 				case SQLITE_BLOB:    type = KDATA2_TYPE_DATA;   break;
 				case SQLITE_INTEGER: type = KDATA2_TYPE_NUMBER; break;
@@ -253,7 +256,7 @@ void _upload_local_data_to_Yandex_Disk(
 			}
 
 			/* get title */
-			const char *title = sqlite3_column_name(stmt, i);
+			title = sqlite3_column_name(stmt, i);
 			/* drop for uuid and timestamp columns */
 			if (title){
 				if (strcmp(title, "uuid") == 0
@@ -265,7 +268,7 @@ void _upload_local_data_to_Yandex_Disk(
 			}
 
 			/* fill json with data */
-			cJSON *column = cJSON_CreateObject();
+			column = cJSON_CreateObject();
 			if (!column){
 				ON_ERR(update->d,
 						STR("%s", "can't cJSON_CreateObject"));		
@@ -278,17 +281,20 @@ void _upload_local_data_to_Yandex_Disk(
 			
 			if (type == KDATA2_TYPE_DATA){
 				/* for datatype data do upload data and add data_id to json */
+				size_t len;
+				const void *value;
 				char data_id[37+128];
+
 				sprintf(data_id, "%s_%s",update->uuid, title);	
 				
 				/* set data_id to json */
 				cJSON_AddItemToObject(column, "data", cJSON_CreateString(data_id));
 
-				size_t len = sqlite3_column_bytes(stmt, i); 
-				const void *value = sqlite3_column_blob(stmt, i);
+				len = sqlite3_column_bytes(stmt, i); 
+				value = sqlite3_column_blob(stmt, i);
 				
 				/* buffer overload safe get data */
-				void *buf = malloc(len);
+				buf = malloc(len);
 				if (!buf){
 					ON_ERR(update->d,
 							STR("can't allocate memory for buffer size: %ld"
@@ -332,11 +338,12 @@ void _upload_local_data_to_Yandex_Disk(
 			} else {
 				/* add value to json */
 				if (type == KDATA2_TYPE_TEXT){
+					char *buf;
 					size_t len = sqlite3_column_bytes(stmt, i); 
 					const unsigned char *value = sqlite3_column_text(stmt, i);
 					
 					/* buffer overload safe get data */
-					char *buf = MALLOC(len + 1);
+					buf = MALLOC(len + 1);
 					if (buf == NULL){
 						ON_ERR(update->d,
 								STR("can't allocate memory for buffer size: %ld"
@@ -379,7 +386,7 @@ void _upload_local_data_to_Yandex_Disk(
 	cJSON_AddItemToObject(json, "columns", columns);
 
 	/* upload json and remove uuid from update table */
-	char *data = cJSON_Print(json);
+	data = cJSON_Print(json);
 	update->data_to_free = data;
 	ON_LOG(update->d,
 		STR("c_yandex_disk_upload_data: app:/%s/%s, data: %s", 
@@ -404,12 +411,17 @@ void _upload_local_data_to_Yandex_Disk(
 int _for_each_update_in_SQLite(
 		void *user_data, int argc, char **argv, char **titles)
 {
+	int i;
 	kdata2_t *d = user_data;
+	struct kdata2_update *update;
+	char *filepath, *errmsg = NULL;
+	c_yd_file_t remote;
+
 	if (!d)
 		return 0; // return 0 - do not interrupt SQL
 
 	/* new kdata_update */
-	struct kdata2_update *update =NEW(struct kdata2_update);
+	update =NEW(struct kdata2_update);
 	if (update == NULL){
 			ON_ERR(d,
 			STR("%s", 
@@ -417,7 +429,6 @@ int _for_each_update_in_SQLite(
 		return 0; // return 0 - do not interrupt SQL
 	};
 
-	int i;
 	for (i = 0; i < argc; ++i) {
 		/* buffer overload safe get data */
 		char buf[BUFSIZ] = "";
@@ -442,7 +453,7 @@ int _for_each_update_in_SQLite(
 	update->d = d;
 	
 	/* path to remote data */
-	char *filepath = STR("app:/%s/%s", DATABASE, update->uuid);
+	filepath = STR("app:/%s/%s", DATABASE, update->uuid);
 
 	/* if local update is deleted -> move remote data to deleted */
 	if (update->deleted) {
@@ -463,12 +474,10 @@ int _for_each_update_in_SQLite(
 
 
 	/* check remote data exists */
-	c_yd_file_t remote;
 	ON_LOG(d,
 		STR("c_yandex_disk_file_info: %s", 
 					filepath));	
 	
-	char *errmsg = NULL;
 	c_yandex_disk_file_info(
 			d->access_token, 
 			filepath, 
@@ -527,6 +536,8 @@ void _download_data_from_YandexDisk_to_local_database_cb(
 		const char *error)
 {
 	struct kdata2_update *update = user_data;	
+	char *SQL;
+
 	if (!update && !update->d)
 		return;
 	
@@ -537,7 +548,7 @@ void _download_data_from_YandexDisk_to_local_database_cb(
 	}
 
 	/* allocate SQL string */
-	char *SQL = MALLOC(size + BUFSIZ);
+	SQL = MALLOC(size + BUFSIZ);
 	if (SQL == NULL){
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
@@ -563,6 +574,8 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 		void *data, size_t size, void *user_data, 
 		const char *error)
 {
+	char SQL[BUFSIZ];
+	cJSON *json, *tablename, *columns, *column = NULL;
 	struct kdata2_update *update = user_data;	
 	if (!update && !update->d)
 		return;
@@ -574,8 +587,7 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 	}
 
 	/* data is json file */
-	cJSON *json = 
-		cJSON_ParseWithLength(data, size);
+	json = cJSON_ParseWithLength(data, size);
 	if (!json){
 		ON_ERR(update->d, "can't parse json file");
 		free(update);
@@ -583,8 +595,7 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 	}
 
 	/* get tablename */
-	cJSON *tablename = 
-		cJSON_GetObjectItem(json, "tablename");
+	tablename = cJSON_GetObjectItem(json, "tablename");
 	if (!tablename){
 		ON_ERR(update->d, "can't get tablename from json file");
 		cJSON_free(json);
@@ -596,8 +607,7 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 			cJSON_GetStringValue(tablename));
 
 	/* get columns */
-	cJSON *columns = 
-		cJSON_GetObjectItem(json, "columns");
+	cJSONcolumns = cJSON_GetObjectItem(json, "columns");
 	if (!columns || !cJSON_IsArray(columns))
 	{
 		ON_ERR(update->d, "can't get columns from json file");
@@ -607,7 +617,6 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 	}
 	
 	/* udate local database */
-	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
@@ -625,7 +634,6 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 		return;
 
 	/* get values for each column and update local database */
-	cJSON *column = NULL;
 	cJSON_ArrayForEach(column, columns){
 		cJSON *name = cJSON_GetObjectItem(column, "name");
 		if (!name || !cJSON_IsString(name)){
@@ -746,6 +754,10 @@ static int _for_each_file_in_YandexDisk_database(
 		const char * error)
 {
 	kdata2_t *d = user_data;
+	
+	/* check if data exists in table */
+	bool data_exists = false; 
+	struct kdata2_table **tables;
 
 	if (!d)
 		return -1;
@@ -759,25 +771,21 @@ static int _for_each_file_in_YandexDisk_database(
 		ON_ERR(d, "file is NULL");
 		return -1;
 	}	
-	
-	/* check if data exists in table */
-	bool data_exists = false; 
 
 	/* for each table in database */
-	struct kdata2_table **tables = d->tables;
+	tables = d->tables;
 	while (*tables) {
+		time_t timestamp = 0;
+		sqlite3_stmt *stmt;
 		struct kdata2_table *table = *tables++;
 	
-		
 		char *SQL = 
 			STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
 					table->tablename, UUIDCOLUMN, file->name);
 		
-		sqlite3_stmt *stmt;
 		if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
 			continue;
 
-		time_t timestamp = 0;
 		while (sqlite3_step(stmt) != SQLITE_DONE)
 			timestamp = sqlite3_column_int64(stmt, 0);
 	
@@ -809,6 +817,7 @@ int _for_each_file_in_YandexDisk_deleted(
 		const c_yd_file_t *file, void * user_data, 
 		const char * error)
 {
+	struct kdata2_table **tables = d->tables;
 	kdata2_t *d = user_data;
 
 	if (!d)
@@ -825,7 +834,6 @@ int _for_each_file_in_YandexDisk_deleted(
 	}	
 	
 	/* for each table in database */
-	struct kdata2_table **tables = d->tables;
 	while (*tables) {
 		struct kdata2_table *table = *tables++;
 	
@@ -853,13 +861,14 @@ void _yd_update(kdata2_t *d){
 	 * 7. get list of deleted in Yandex Disk
 	 * 8. remove local data for deleted */
 
+	char *SQL, *errmsg = NULL;
+
 	if (!d || d->access_token[0] == 0)
 		return;
 	
 	ON_LOG(d, "c_yandex_disk_file_info: app:/");	
 
 	/* check Yandex Disk Connection */
-	char *errmsg = NULL;
 	c_yandex_disk_file_info(
 				d->access_token, 
 				"app:/", 
@@ -886,7 +895,7 @@ void _yd_update(kdata2_t *d){
 			NULL);
 
 	/* do for each update in local updates table */
-	char *SQL = "SELECT * from _kdata2_updates"; 
+	SQL = "SELECT * from _kdata2_updates"; 
 	if (kdata2_sqlite3_exec(d, SQL))
 		return;
 
@@ -927,12 +936,14 @@ static void * _yd_thread(void * data)
 
 void _yd_daemon_init(kdata2_t * d)
 {
+	int err;
+
 	if (!d)
 		return;
 	d->do_update = true;
 	
 	//create new thread
-	int err = pthread_create(
+	err = pthread_create(
 			&(d->tid), 
 			NULL, 
 			_yd_thread, 
@@ -955,6 +966,24 @@ int kdata2_init(
 		...
 		)
 {
+	int err = 0;
+	char *errmsg = NULL;
+	kdata2_t *d;
+	va_list args;
+	struct kdata2_table * table, **tables;
+
+	char SQL_updates[] = 
+		"CREATE TABLE IF NOT EXISTS "
+		"_kdata2_updates "
+		"( "
+		"tablename TEXT, "
+		"uuid TEXT, "
+		"timestamp INT, "
+		"local INT, "
+		"deleted INT "
+		")"
+		;	
+
 	if (on_log)
 		on_log(on_log_data, "init...");	
 
@@ -965,8 +994,6 @@ int kdata2_init(
 	 * 4. Allocate data to transfer trough new tread
 	 * 5. Start Yandex Disk daemon in thread */
 
-	int err = 0;
-	char *errmsg = NULL;
 	
 	/* check filepath */
 	if (!filepath){
@@ -982,7 +1009,7 @@ int kdata2_init(
 		return -1;
 	}
 	/* allocate kdata2_t */
-	kdata2_t *d = NEW(kdata2_t);
+	d = NEW(kdata2_t);
 	if (d == NULL){
 		if (on_error)
 			on_error(on_error_data, "can't allocate kdata2_t");			
@@ -1026,10 +1053,9 @@ int kdata2_init(
 	int tcount = 0;
 
 	//init va_args
-	va_list args;
 	va_start(args, sec);
 
-	struct kdata2_table * table = va_arg(args, struct kdata2_table *);
+	table = va_arg(args, struct kdata2_table *);
 	if (!table)
 		return -1;
 
@@ -1055,7 +1081,7 @@ int kdata2_init(
 	d->tables[tcount] = NULL;
 
 	/* fill SQL string with data and update tables in memory*/
-	struct kdata2_table ** tables = d->tables; // pointer to iterate
+	tables = d->tables; // pointer to iterate
 	while (*tables) {
 
 		/* create SQL string */
@@ -1063,6 +1089,8 @@ int kdata2_init(
 
 		/* for each table in dataset */
 		struct kdata2_table *table = *tables++;
+
+		struct kdata2_column ** col_ptr;
 		
 		/* check if columns exists */
 		if (!table->columns)
@@ -1090,7 +1118,7 @@ int kdata2_init(
 							table->tablename);
 		kdata2_sqlite3_exec(d, SQL);
 
-		struct kdata2_column ** col_ptr = table->columns; // pointer to iterate
+		col_ptr = table->columns; // pointer to iterate
 		while (*col_ptr) {
 			/* for each column in table */
 			struct kdata2_column *col = *col_ptr++;
@@ -1146,21 +1174,9 @@ int kdata2_init(
 	}
 
 	/* create table to store updates */
-	char SQL[] = 
-		"CREATE TABLE IF NOT EXISTS "
-		"_kdata2_updates "
-		"( "
-		"tablename TEXT, "
-		"uuid TEXT, "
-		"timestamp INT, "
-		"local INT, "
-		"deleted INT "
-		")"
-		;	
-
 	/* run SQL command */
 	ON_LOG(d, SQL);
-	kdata2_sqlite3_exec(d, SQL);
+	kdata2_sqlite3_exec(d, SQL_updates);
 
 	/* if no token */
 	if (!access_token)
@@ -1182,6 +1198,9 @@ kdata2_set_number_for_uuid(
 		long number, 
 		const char *uuid)
 {
+	time_t timestamp = time(NULL);
+	char SQL[BUFSIZ];
+
 	if (!d)
 		return NULL;
 
@@ -1195,10 +1214,8 @@ kdata2_set_number_for_uuid(
 		uuid = _uuid;
 	}
 
-	time_t timestamp = time(NULL);
 
 	/* update database */
-	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
@@ -1239,6 +1256,9 @@ char * kdata2_set_float_for_uuid(
 		double number, 
 		const char *uuid)
 {
+	time_t timestamp = time(NULL);
+	char SQL[BUFSIZ];
+
 	if (!d)
 		return NULL;
 
@@ -1252,10 +1272,8 @@ char * kdata2_set_float_for_uuid(
 		uuid = _uuid;
 	}
 
-	time_t timestamp = time(NULL);
 
 	/* update database */
-	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
@@ -1296,6 +1314,9 @@ char * kdata2_set_text_for_uuid(
 		const char *text, 
 		const char *uuid)
 {
+	time_t timestamp = time(NULL);
+	char SQL[BUFSIZ];
+
 	if (!d)
 		return NULL;
 
@@ -1309,10 +1330,8 @@ char * kdata2_set_text_for_uuid(
 		uuid = _uuid;
 	}
 
-	time_t timestamp = time(NULL);
 
 	/* update database */
-	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
@@ -1354,6 +1373,9 @@ char * kdata2_set_data_for_uuid(
 		int len,
 		const char *uuid)
 {
+	time_t timestamp = time(NULL);
+	char SQL[BUFSIZ];
+
 	if (!d)
 		return NULL;
 
@@ -1371,10 +1393,8 @@ char * kdata2_set_data_for_uuid(
 		return NULL;
 	}	
 
-	time_t timestamp = time(NULL);
 
 	/* start SQLite request */
-	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
@@ -1431,6 +1451,8 @@ int kdata2_remove_for_uuid(
 		const char *tablename, 
 		const char *uuid)
 {
+	char SQL[BUFSIZ];
+
 	if (!d)
 		return -1;
 
@@ -1439,7 +1461,6 @@ int kdata2_remove_for_uuid(
 		return -1;
 	}	
 	
-	char SQL[BUFSIZ];
 	snprintf(SQL, BUFSIZ-1,
 			"DELETE FROM '%s' WHERE %s = '%s'", 
 			tablename, UUIDCOLUMN, uuid);	
@@ -1469,6 +1490,10 @@ char * kdata2_get_string(
 		kdata2_t *d, 
 		const char *SQL)
 {
+	char *errmsg = NULL;
+	sqlite3_stmt *stmt;
+	const char *str, *ret_str;
+
 	if (!d)
 		return NULL;
 
@@ -1477,21 +1502,18 @@ char * kdata2_get_string(
 		return NULL;
 	}
 
-	char *errmsg = NULL;
-	sqlite3_stmt *stmt;
-	
 	ON_LOG(d, SQL);
 	if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
 		return NULL;
 
 	// get first value
 	sqlite3_step(stmt);
-	const char *str = (const char *)
+	str = (const char *)
 		sqlite3_column_text(stmt, 0);
 	if (!str)
 		return NULL;
 	
-	char *ret_str = strdup(str);
+	ret_str = strdup(str);
 	sqlite3_finalize(stmt);
 	return ret_str;
 }	
@@ -1510,6 +1532,9 @@ void kdata2_get(
 			)
 		)
 {
+	sqlite3_stmt *stmt;
+	int num_cols;
+
 	if (!d)
 		return;
 	
@@ -1524,22 +1549,21 @@ void kdata2_get(
 	}
 
 	/* start SQLite request */
-	sqlite3_stmt *stmt;
 	
 	ON_LOG(d, SQL);
 	if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
 		return;
 
-	int num_cols = sqlite3_column_count(stmt); //number of colums
+	num_cols = sqlite3_column_count(stmt); //number of colums
 	
 	while (sqlite3_step(stmt) != SQLITE_DONE) {
 		enum KDATA2_TYPE types[num_cols];
 		const char *columns[num_cols];
 		void *values[num_cols];
 		size_t sizes[num_cols];
+		int i;
 
 		/* iterate columns */
-		int i;
 		for (i = 0; i < num_cols; ++i) {
 			/* get datatype */
 			enum KDATA2_TYPE type;
@@ -1627,6 +1651,12 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 }
 
 int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
+	struct kdata2_column **columns;
+	va_list args;
+	enum KDATA2_TYPE type;
+	char * columnname;
+	int i = 0;
+
 	// check table pointer
 	if (!t){
 		return -1;
@@ -1638,7 +1668,7 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 		return -1;
 	
 	// pointer to collumns
-	struct kdata2_column **columns = malloc(8);
+	columns = malloc(8);
 	if (!columns){
 		return -1;
 	}
@@ -1648,20 +1678,19 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	t[0]->columns = NULL;
 	
 	//init va_args
-	va_list args;
 	va_start(args, tablename);
 
-	enum KDATA2_TYPE type = va_arg(args, enum KDATA2_TYPE);
+	type = va_arg(args, enum KDATA2_TYPE);
 	if (type == KDATA2_TYPE_NULL)
 		return -1;
 
-	char * columnname = va_arg(args, char *);
+	columnname = va_arg(args, char *);
 	if (!columnname)
 		return -1;
 
 	//iterate va_args
-	int i = 0;
 	while (type != KDATA2_TYPE_NULL && columnname != NULL){
+		void *p;
 
 		/* allocate new column */
 		struct kdata2_column *new = NEW(struct kdata2_column);
@@ -1676,7 +1705,7 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 		columns[i++] = new;
 
 		//realloc columns array
-		void *p = realloc(columns, i * 8 + 8);
+		p = realloc(columns, i * 8 + 8);
 		if (!p){
 			break;
 		}		
