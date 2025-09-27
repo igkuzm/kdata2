@@ -291,12 +291,12 @@ void _upload_local_data_to_Yandex_Disk(
 
 				/* allocate new struct update for thread */
 				struct kdata2_update *new_update = NEW(struct kdata2_update);
-				if (new_updade == NULL){
+				if (new_update == NULL){
 					ON_ERR(update->d,
 						STR("%s", 
 							"can't allocate memory for struct kdata2_update"));
-						break
-				};					
+						break;
+				}					
 					
 				new_update->d = update->d;
 				strcpy(new_update->column, update->column);
@@ -328,12 +328,13 @@ void _upload_local_data_to_Yandex_Disk(
 					const unsigned char *value = sqlite3_column_text(stmt, i);
 					
 					/* buffer overload safe get data */
-					char *buf = MALLOC(len + 1,
+					char *buf = MALLOC(len + 1);
+					if (buf == NULL){
 						ON_ERR(update->d,
 								STR("can't allocate memory for buffer size: %ld"
 									, len + 1));					
 						break;
-					);
+					}
 					strncpy(buf, (const char *)value, len);
 					buf[len] = 0;
 						
@@ -528,13 +529,14 @@ void _download_data_from_YandexDisk_to_local_database_cb(
 	}
 
 	/* allocate SQL string */
-	char *SQL = MALLOC(size + BUFSIZ,
+	char *SQL = MALLOC(size + BUFSIZ);
+	if (SQL == NULL){
 		if (update->d->on_error)
 			update->d->on_error(update->d->on_error_data, 
 				STR("can't allocate memory for SQL string size: %ld", 
 					size + BUFSIZ));	
 		return;
-	);
+	};
 
 	/* update local database */
 	snprintf(SQL, size + BUFSIZ-1,
@@ -1008,10 +1010,11 @@ int kdata2_init(
 	} 
 
 	/* allocate and fill tables array */
-	d->tables = MALLOC(8,
+	d->tables = MALLOC(8);
+	if (d->tables == NULL){
 		ON_ERR(d, "can't allocate kdata2_t_table");		
 		return -1;
-		);
+	}
 	int tcount = 0;
 
 	//init va_args
