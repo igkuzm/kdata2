@@ -35,12 +35,14 @@
 #endif // WIN32
 
 #define ON_ERR(ptr, msg) \
-	({if (ptr->on_error) ptr->on_error(ptr->on_error_data, msg);})
+	if (ptr->on_error) ptr->on_error(ptr->on_error_data, msg);
 #define ON_LOG(ptr, msg) \
-	({if (ptr->on_log) ptr->on_log(ptr->on_log_data, msg);})
+	if (ptr->on_log) ptr->on_log(ptr->on_log_data, msg);
 
-#define STRCOPY(dst, src) \
-	({strncpy(dst, src, sizeof(dst)-1); dst[sizeof(dst)-1]=0;})
+static void STRCOPY(char *dst, const char *src)
+{
+	strncpy(dst, src, sizeof(dst)-1); dst[sizeof(dst)-1]=0;
+}
 
 struct kdata2_update {
 	char table[128];
