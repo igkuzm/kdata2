@@ -618,7 +618,7 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 	}
 	
 	/* udate local database */
-	snprintf(SQL, BUFSIZ-1,
+	sprintf(SQL,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
