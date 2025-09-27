@@ -1064,11 +1064,13 @@ int kdata2_init(
 
 	//iterate va_args
 	while (table){
+		void *p;
+
 		// add table to tables
 		d->tables[tcount++] = table;
 		
 		// realloc tables
-		void *p = realloc(d->tables, tcount * 8 + 8);
+		p = realloc(d->tables, tcount * 8 + 8);
 		if (!p) {
 			ON_ERR(d,		
 				STR("can't realloc tables with size: %d", 
@@ -1178,7 +1180,7 @@ int kdata2_init(
 
 	/* create table to store updates */
 	/* run SQL command */
-	ON_LOG(d, SQL);
+	ON_LOG(d, SQL_updates);
 	kdata2_sqlite3_exec(d, SQL_updates);
 
 	/* if no token */
@@ -1379,6 +1381,7 @@ char * kdata2_set_data_for_uuid(
 	time_t timestamp = time(NULL);
 	char SQL[BUFSIZ];
 	sqlite3_stmt *stmt;
+	int res;
 
 	if (!d)
 		return NULL;
@@ -1416,7 +1419,7 @@ char * kdata2_set_data_for_uuid(
 	if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
 		return NULL;
 
-	int res = sqlite3_bind_blob(stmt, 1, data, len, SQLITE_TRANSIENT);
+	res = sqlite3_bind_blob(stmt, 1, data, len, SQLITE_TRANSIENT);
 	if (res != SQLITE_OK) {
 		ON_ERR(d, STR("sqlite3_bind_blob: %s", 
 					sqlite3_errmsg(d->db)));		
