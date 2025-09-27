@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
 
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
@@ -31,7 +30,9 @@
 #define true 1
 #define false 0
 #endif
-#endif
+#else // not WIN32
+#include <unistd.h>
+#endif // WIN32
 
 #define ON_ERR(ptr, msg) \
 	({if (ptr->on_error) ptr->on_error(ptr->on_error_data, msg);})
