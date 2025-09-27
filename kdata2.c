@@ -23,7 +23,7 @@
 #include "cYandexDisk/alloc.h"
 #include "cYandexDisk/log.h"
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #include <windows.h>
 #ifndef bool
 #define bool char
@@ -913,7 +913,7 @@ static void * _yd_thread(void * data)
 	while (d && d->do_update) {
 		ON_LOG(d, "updating data...");	
 		_yd_update(d);
-#ifdef __WIN32__
+#ifdef _WIN32
 			Sleep(d->sec*1000);
 #else
 			sleep(d->sec);
