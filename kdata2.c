@@ -1563,10 +1563,10 @@ void kdata2_get(
 	num_cols = sqlite3_column_count(stmt); //number of colums
 	
 	while (sqlite3_step(stmt) != SQLITE_DONE) {
-		enum KDATA2_TYPE types[num_cols];
-		const char *columns[num_cols];
-		void *values[num_cols];
-		size_t sizes[num_cols];
+		enum KDATA2_TYPE *types = MALLOC(num_cols*sizeof(enum KDATA2_TYPE));
+		const char **columns = MALLOC(num_cols * sizeod(char *));
+		void **values = MALLOC(num_cols*sizeof(void *));
+		size_t *sizes = MALLOC(num_cols*sizeof(size_t));
 		int i;
 
 		/* iterate columns */
