@@ -1564,7 +1564,7 @@ void kdata2_get(
 	
 	while (sqlite3_step(stmt) != SQLITE_DONE) {
 		enum KDATA2_TYPE *types = MALLOC(num_cols*sizeof(enum KDATA2_TYPE));
-		const char **columns = MALLOC(num_cols * sizeod(char *));
+		const char **columns = MALLOC(num_cols * sizeof(char *));
 		void **values = MALLOC(num_cols*sizeof(void *));
 		size_t *sizes = MALLOC(num_cols*sizeof(size_t));
 		int i;
