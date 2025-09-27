@@ -636,12 +636,12 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 
 	/* get values for each column and update local database */
 	cJSON_ArrayForEach(column, columns){
-		cJSON *name = cJSON_GetObjectItem(column, "name");
+		cJSON *type, *name = cJSON_GetObjectItem(column, "name");
 		if (!name || !cJSON_IsString(name)){
 			ON_ERR(update->d, "can't get column name from json file");			
 			continue;
 		}		
-		cJSON *type = cJSON_GetObjectItem(column, "type");
+		type = cJSON_GetObjectItem(column, "type");
 		if (!type || !cJSON_IsNumber(type)){
 			ON_ERR(update->d, "can't get column type from json file");			
 			continue;
@@ -821,8 +821,8 @@ int _for_each_file_in_YandexDisk_deleted(
 		const c_yd_file_t *file, void * user_data, 
 		const char * error)
 {
-	struct kdata2_table **tables = d->tables;
 	kdata2_t *d = user_data;
+	struct kdata2_table **tables = d->tables;
 
 	if (!d)
 		return -1;
