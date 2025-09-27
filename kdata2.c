@@ -559,7 +559,7 @@ void _download_data_from_YandexDisk_to_local_database_cb(
 	};
 
 	/* update local database */
-	sprintf(SQL, 
+	snprintf(SQL, size + BUFSIZ-1,
 			"UPDATE '%s' SET '%s' = '%s' WHERE %s = '%s'", update->table, UUIDCOLUMN, 
 					update->column, 
 							(char*)data, update->uuid		
@@ -618,7 +618,7 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 	}
 	
 	/* udate local database */
-	sprintf(SQL,
+	snprintf(SQL, BUFSIZ-1,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
