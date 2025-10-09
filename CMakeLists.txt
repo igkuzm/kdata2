@@ -36,12 +36,15 @@ add_library(${TARGET} STATIC
 )
 
 if(WIN32)
-		INCLUDE_DIRECTORIES(${CYANDEXDISK_SOURCE_DIR}/pthreads-win32/include)	
 elseif(APPLE)
 else()
 	if (NOT ANDROID)
 		LIST(APPEND ADDLIBS pthread dl)
 	endif()
+endif()
+
+if(MSVC)
+		INCLUDE_DIRECTORIES(${CYANDEXDISK_SOURCE_DIR}/pthreads-win32/include)	
 endif()
 
 target_link_libraries(${TARGET} cYandexDisk ${ADDLIBS})
