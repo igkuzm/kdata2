@@ -1319,8 +1319,9 @@ char * kdata2_set_text_for_uuid(
 		const char *text, 
 		const char *uuid)
 {
+	size_t text_len;
 	time_t timestamp = time(NULL);
-	char SQL[BUFSIZ];
+	char *SQL;
 
 	if (!d)
 		return NULL;
@@ -1335,9 +1336,15 @@ char * kdata2_set_text_for_uuid(
 		uuid = _uuid;
 	}
 
+	text_len = strlen(text);
+	SQL = malloc(text_len + BUFSIZ);
+	if (SQL == NULL){
+		ON_ERR(d, "malloc");
+		return NULL;
+	}
 
 	/* update database */
-	snprintf(SQL, BUFSIZ-1,
+	sprintf(SQL,
 			"INSERT INTO '%s' (%s) "
 			"SELECT '%s' "
 			"WHERE NOT EXISTS (SELECT 1 FROM '%s' WHERE %s = '%s'); "
