@@ -7,7 +7,7 @@ set(TARGET kdata2)
 #add_subdirectory(${KDATA2_SOURCE_DIR})
 
 if (NOT DEFINED KDATA2_SOURCE_DIR)
-	SET(KDATA2_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+	set(KDATA2_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 
 project(
@@ -17,10 +17,10 @@ project(
 	LANGUAGES C 
 )
 
-SET(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
+set(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
 add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 
-if(WIN32 OR ANDROID)
+if(ANDROID)
 	SET(SQLITE_SRC sqlite3.c)
 else()
 	LIST(APPEND ADDLIBS sqlite3)
@@ -36,22 +36,31 @@ add_library(${TARGET} STATIC
 )
 
 if(WIN32)
-	#pthread
-	include_directories(${CYANDEXDISK_SOURCE_DIR}/cygwin/include)	
+#libz
+	add_library(z STATIC IMPORTED)
+	set_target_properties(z PROPERTIES IMPORTED_LOCATION
+		${CYANDEXDISK_SOURCE_DIR}/win32/libz.a)	
+#pthread
+	add_library(pthread SHARED IMPORTED)
+	set_target_properties(pthread PROPERTIES IMPORTED_LOCATION
+	${CYANDEXDISK_SOURCE_DIR}/win32/pthreads-win32/lib/pthreadGC1.dll)
+	include_directories(${CYANDEXDISK_SOURCE_DIR}/win32/pthreads-win32/include)	
+	list(APPEND ADDLIBS pthread dl)
+#curl
+	add_library(curl SHARED IMPORTED)		
+	set_target_properties(curl PROPERTIES IMPORTED_LOCATION
+		${CYANDEXDISK_SOURCE_DIR}/win32/curl/bin/libcurl.dll)	
+	include_directories(${CYANDEXDISK_SOURCE_DIR}/win32/curl/include)	
 elseif(APPLE)
 else()
 	if (NOT ANDROID)
-		LIST(APPEND ADDLIBS pthread dl)
+		list(APPEND ADDLIBS pthread dl)
 	endif()
 endif()
 
-if(MSVC)
-		INCLUDE_DIRECTORIES(${CYANDEXDISK_SOURCE_DIR}/pthreads-win32/include)	
-endif()
-
-target_link_libraries(${TARGET} cYandexDisk ${ADDLIBS})
+target_link_libraries(${TARGET} cYandexDisk)
 
 if(${KDATA_BUILD_TEST})
 	add_executable(${TARGET}_test test.c)
-	target_link_libraries(${TARGET}_test ${TARGET})
+	target_link_libraries(${TARGET}_test ${TARGET} z curl ${ADDLIBS})
 endif()
