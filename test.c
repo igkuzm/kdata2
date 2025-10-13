@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 	printf("kdata2 test start...\n");
 	
 	struct kdata2_table *t;
-	kdata2_table_init(&t, "test_table", "pers", KDATA2_TYPE_TEXT,   "name", KDATA2_TYPE_NUMBER, "date", KDATA2_TYPE_DATA,   "photo", NULL); 
+	kdata2_table_init(&t, "pers", KDATA2_TYPE_TEXT,   "name", KDATA2_TYPE_NUMBER, "date", KDATA2_TYPE_DATA,   "photo", NULL); 
 
 	printf("kdata2 init database...\t");
 	kdata2_t *database;
