@@ -10,26 +10,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int callback(void *user_data, enum KDATA2_TYPE type, const char *column, void *data, size_t size){
-	switch (type) {
-		case KDATA2_TYPE_NUMBER:
-			{
-				long *number = data;	
-				printf("%s = %ld\n", column, *number); break;
-			}
-		case KDATA2_TYPE_TEXT:
-			{
-				char *text = data;	
-				printf("%s: %s\n", column, text); break;
-			}			
-		case KDATA2_TYPE_DATA:
-			{
-				char *text = data;	
-				printf("%s: data (%ld bytes)\n", column, size); break;
-			}			
+int callback(
+		void *user_data, int ncols, 
+		enum KDATA2_TYPE types[], const char *columns[], void *values[], size_t sizes[])
+{
+	int i;
+	for (i = 0; i < ncols; i++) {
+		switch (types[i]) {
+			case KDATA2_TYPE_NUMBER:
+				{
+					long *number = values[i];	
+					printf("%s = %ld\n", columns[i], *number); break;
+				}
+			case KDATA2_TYPE_TEXT:
+				{
+					char *text = values[i];	
+					printf("%s: %s\n", columns[i], text); break;
+				}			
+			case KDATA2_TYPE_DATA:
+				{
+					printf("%s: data (%ld bytes)\n", columns[i], sizes[i]); break;
+				}			
+		}
 	}
 
 	return 0;
+}
+
+void on_log(void *data, const char *msg){
+	if (msg)
+		printf("%s\n", msg);
 }
 
 int main(int argc, char *argv[])
@@ -37,11 +47,11 @@ int main(int argc, char *argv[])
 	printf("kdata2 test start...\n");
 	
 	struct kdata2_table *t;
-	kdata2_table_init(&t, "pers", KDATA2_TYPE_TEXT,   "name", KDATA2_TYPE_NUMBER, "date", KDATA2_TYPE_DATA,   "photo", NULL); 
+	kdata2_table_init(&t, "test_table", "pers", KDATA2_TYPE_TEXT,   "name", KDATA2_TYPE_NUMBER, "date", KDATA2_TYPE_DATA,   "photo", NULL); 
 
 	printf("kdata2 init database...\t");
 	kdata2_t *database;
-	kdata2_init(&database, "database.db", "", 10, t, NULL);
+	kdata2_init(&database, "database.db", "",  NULL, on_log, NULL, on_log, 10, t, NULL);
 	printf("OK\n");
 
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";
@@ -76,7 +86,7 @@ int main(int argc, char *argv[])
 	printf("OK\n");
 
 	printf("GET DATA:\n");
-	kdata2_get(database, "pers", NULL, NULL, callback);
+	kdata2_get(database, "select * from pers;", NULL, callback);
 
 
 	printf("press any key...\n");
