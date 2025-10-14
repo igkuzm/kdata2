@@ -17,6 +17,12 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#define EXPORTDLL __declspec(dllexport)
+#else
+#define EXPORTDLL
+#endif
+	
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
@@ -53,7 +59,7 @@ struct kdata2_table {
 };
 
 /* allocate table structure with allocated columns; va_args: type, columnname, ... NULL */
-int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...); 
+int EXPORTDLL kdata2_table_init(struct kdata2_table **t, const char * tablename, ...); 
 
 /* this is kdata2 database */
 typedef struct kdata2 {
@@ -77,7 +83,7 @@ typedef struct kdata2 {
 } kdata2_t;
 
 /* init function */
-int 
+int EXPORTDLL
 kdata2_init(
 		kdata2_t     ** database,     // pointer to kdata2_t
 		const char    * filepath,     // file path to where store SQLite data
@@ -90,15 +96,15 @@ kdata2_init(
 		...							  // kdata2_table, NULL
 );
 /* set access_token */
-int 
+int EXPORTDLL
 kdata2_set_access_token(kdata2_t * database, const char *access_token);
 
 /* close database and free memory */
-int kdata2_close(kdata2_t *dataset);
+int EXPORTDLL kdata2_close(kdata2_t *dataset);
 
 /* set number for data entity with uuid; set uuid to NULL to create new */
 /* return UUID (allocated if uuid is NULL) */
-char * 
+char EXPORTDLL * 
 kdata2_set_number_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -108,7 +114,7 @@ kdata2_set_number_for_uuid(
 
 /* set number for data entity with uuid; set uuid to NULL to create new */
 /* return UUID (allocated if uuid is NULL) */
-char * 
+char EXPORTDLL * 
 kdata2_set_float_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -118,7 +124,7 @@ kdata2_set_float_for_uuid(
 
 /* set text for data entity with uuid; set uuid to NULL to create new */
 /* return UUID (allocated if uuid is NULL) */
-char * 
+char EXPORTDLL * 
 kdata2_set_text_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -128,7 +134,7 @@ kdata2_set_text_for_uuid(
 
 /* set data for data entity with uuid; set uuid to NULL to create new */
 /* return UUID (allocated if uuid is NULL) */
-char * 
+char EXPORTDLL * 
 kdata2_set_data_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
@@ -138,14 +144,14 @@ kdata2_set_data_for_uuid(
 		const char *uuid);
 
 /* remove data entity with uuid */
-int 
+int EXPORTDLL
 kdata2_remove_for_uuid(
 		kdata2_t * database, 
 		const char *tablename, 
 		const char *uuid);
 
 /* get entities for table; set predicate to "WHERE uuid = 'uuid'" to get with uuid */
-void 
+void EXPORTDLL
 kdata2_get(
 		kdata2_t * database, 
 		const char *SQL,
@@ -161,13 +167,13 @@ kdata2_get(
 		);
 
 // return string value of SQL request
-char *
+char EXPORTDLL *
 kdata2_get_string(
 		kdata2_t * database, 
 		const char *SQL);
 	
 /* init Yandex Disk */
-void _yd_daemon_init(kdata2_t * d);
+void EXPORTDLL _yd_daemon_init(kdata2_t * d);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */
