@@ -39,11 +39,6 @@
 #define ON_LOG(ptr, msg) \
 	if (ptr->on_log) ptr->on_log(ptr->on_log_data, msg);
 
-static void STRCOPY(char *dst, const char *src)
-{
-	strncpy(dst, src, sizeof(dst)-1); dst[sizeof(dst)-1]=0;
-}
-
 struct kdata2_update {
 	char table[128];
 	char uuid[37];
@@ -314,9 +309,9 @@ void _upload_local_data_to_Yandex_Disk(
 				}					
 					
 				new_update->d = update->d;
-				strcpy(new_update->column, update->column);
-				strcpy(new_update->table, update->table);
-				strcpy(new_update->uuid, update->uuid);
+				strncpy(new_update->column, update->column, sizeof(new_update->column));
+				strncpy(new_update->table, update->table, sizeof(new_update->table));
+				strncpy(new_update->uuid, update->uuid, sizeof(new_update->uuid));
 				new_update->timestamp = update->timestamp;
 				new_update->local = update->local;
 				new_update->deleted = update->deleted;
@@ -439,8 +434,8 @@ int _for_each_update_in_SQLite(
 		}
 		/* fill update with data */
 		switch (i) {
-			case 0: strcpy (update->table, buf); break;
-			case 1: STRCOPY(update->uuid,  buf); break;
+			case 0: strncpy (update->table, buf, sizeof(update->table)); break;
+			case 1: strncpy(update->uuid,  buf, sizeof(update->uuid)); break;
 			case 2: update->timestamp = atol(buf)   ; break;
 			case 3: update->local = atoi(buf)       ; break;
 			case 4: update->deleted = atoi(buf)     ; break;
@@ -604,8 +599,8 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 		return;
 	}
 
-	STRCOPY(update->table, 
-			cJSON_GetStringValue(tablename));
+	strncpy(update->table, 
+			cJSON_GetStringValue(tablename), sizeof(update->table));
 
 	/* get columns */
 	columns = cJSON_GetObjectItem(json, "columns");
@@ -651,7 +646,7 @@ void _download_json_from_YandexDisk_to_local_database_cb(
 			cJSON *data;
 
 			/* download data from Yandex Disk */
-			STRCOPY(update->column, cJSON_GetStringValue(name));
+			strncpy(update->column, cJSON_GetStringValue(name), sizeof(update->column));
 
 			data = cJSON_GetObjectItem(column, "data");
 			if (!data){
@@ -737,7 +732,7 @@ void _download_from_YandexDisk_to_local_database(
 	};
 	
 	update->d = d;
-	STRCOPY(update->uuid, file->name); 
+	strncpy(update->uuid, file->name, sizeof(update->uuid)); 
 	update->timestamp = file->modified;
 
 	/* download data */
@@ -1187,7 +1182,7 @@ int kdata2_init(
 	if (!access_token)
 		access_token = "";
 
-	STRCOPY(d->access_token, access_token);
+	strncpy(d->access_token, access_token, sizeof(d->access_token));
 	
 	/* start Yandex Disk daemon */
 	_yd_daemon_init(d);
@@ -1633,6 +1628,10 @@ void kdata2_get(
 				}
 			}
 		}
+		free(types);
+		free(columns);
+		free(values);
+		free(sizes);
 	}
 
 	sqlite3_finalize(stmt);
@@ -1659,7 +1658,7 @@ int kdata2_set_access_token(kdata2_t * d, const char *access_token){
 		return -1;
 	}
 
-	STRCOPY(d->access_token, access_token);
+	strncpy(d->access_token, access_token, sizeof(d->access_token));
 	return 0;
 }
 
@@ -1687,7 +1686,7 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 	}
 
 	/* set tables attributes */
-	STRCOPY(t[0]->tablename, tablename);
+	strncpy(t[0]->tablename, tablename, sizeof(t[0]->tablename));
 	t[0]->columns = NULL;
 	
 	//init va_args
@@ -1711,7 +1710,7 @@ int kdata2_table_init(struct kdata2_table **t, const char * tablename, ...){
 			break;
 
 		/* set column attributes */
-		STRCOPY(new->columnname, columnname);
+		strncpy(new->columnname, columnname, sizeof(new->columnname));
 		new->type = type;
 
 		/* add column to array */

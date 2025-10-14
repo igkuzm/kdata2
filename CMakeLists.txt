@@ -68,4 +68,14 @@ target_link_libraries(${TARGET} cYandexDisk)
 if(${KDATA_BUILD_TEST})
 	add_executable(${TARGET}_test test.c)
 	target_link_libraries(${TARGET}_test ${TARGET} z curl ${ADDLIBS})
+	file(GLOB files 
+		"${KDATA2_SOURCE_DIR}/*.jpg"
+		)	
+	#Copy
+	foreach(_file ${files})
+			file(INSTALL
+				DESTINATION "${CMAKE_BINARY_DIR}"
+				FILES "${_file}"
+			)
+	endforeach()	
 endif()
