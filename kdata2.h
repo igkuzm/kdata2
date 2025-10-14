@@ -18,8 +18,10 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
+#undef EXPORTDLL
 #define EXPORTDLL __declspec(dllexport)
 #else
+#undef EXPORTDLL
 #define EXPORTDLL
 #endif
 	
