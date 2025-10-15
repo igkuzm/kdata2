@@ -28,7 +28,7 @@ extern "C" {
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#include "sqlite3.h"
+#include <sqlite3.h>
 
 #ifndef UUIDCOLUMN
 #define UUIDCOLUMN "ZRECORDNAME"
