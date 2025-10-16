@@ -20,6 +20,9 @@ project(
 set(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
 add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 
+include_directories(${KDATA2_SOURCE_DIR})	
+include_directories(${KDATA2_SOURCE_DIR}/sqlite3)
+
 if(ANDROID)
 	SET(SQLITE_SRC sqlite3/sqlite3.c)
 elseif(WIN32)
