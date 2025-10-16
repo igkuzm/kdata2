@@ -17,6 +17,10 @@ project(
 	LANGUAGES C 
 )
 
+if(APPLE)
+	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -framework Foundation")
+endif()
+
 set(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
 add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 
@@ -31,21 +35,14 @@ else()
 	LIST(APPEND ADDLIBS sqlite3)
 endif()
 
-if(APPLE)
-	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -framework Foundation")
-endif()
-
-add_library(${TARGET} STATIC
-	kdata2.c
-	${SQLITE_SRC}
-)
-
-if(WIN32)
-#libz
-	add_library(z STATIC IMPORTED)
-	set_target_properties(z PROPERTIES IMPORTED_LOCATION
-		${CYANDEXDISK_SOURCE_DIR}/win32/libz.a)	
-#pthread
+# Determine the location of the libraries to use based on the platform.
+if(ANDROID)
+#sqlite3
+	list(APPEND ADDSRC sqlite3/sqlite3.c)	
+elseif(WIN32)
+#sqlite3
+	list(APPEND ADDSRC sqlite3/sqlite3.c)	
+#pthreads
 	add_library(pthread SHARED IMPORTED)
 	set_target_properties(pthread PROPERTIES 
 		IMPORTED_LOCATION
@@ -53,24 +50,23 @@ if(WIN32)
 		IMPORTED_IMPLIB ${CYANDEXDISK_SOURCE_DIR}/win32/pthreads-win32/lib/libpthreadGC1.a)	
 	include_directories(${CYANDEXDISK_SOURCE_DIR}/win32/pthreads-win32/include)	
 	list(APPEND ADDLIBS pthread)
-#curl
-	add_library(curl STATIC IMPORTED)		
-	set_target_properties(curl PROPERTIES 
-		IMPORTED_LOCATION
-		${CYANDEXDISK_SOURCE_DIR}/win32/curl/lib/libcurl.dll.a)
-	include_directories(${CYANDEXDISK_SOURCE_DIR}/win32/curl/include)	
-elseif(APPLE)
 else()
-	if (NOT ANDROID)
-		list(APPEND ADDLIBS pthread dl)
-	endif()
+	find_package(CURL)
+	include_directories(${CURL_INCLUDE_DIRS})
+	list(APPEND ADDLIBS curl)	
+	list(APPEND ADDLIBS z)	
 endif()
 
-target_link_libraries(${TARGET} cYandexDisk)
+add_library(${TARGET} STATIC
+	kdata2.c
+	${ADDSRC}
+)
 
-if(${KDATA_BUILD_TEST})
+target_link_libraries(${TARGET} cYandexDisk ${ADDLIBS})
+
+if(${BUILD_TEST})
 	add_executable(${TARGET}_test test.c)
-	target_link_libraries(${TARGET}_test ${TARGET} z curl ${ADDLIBS})
+	target_link_libraries(${TARGET}_test ${TARGET} ${ADDLIBS})
 	file(GLOB files 
 		"${KDATA2_SOURCE_DIR}/*.jpg"
 		)	
