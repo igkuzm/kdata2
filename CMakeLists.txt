@@ -40,6 +40,12 @@ if(ANDROID)
 #sqlite3
 	list(APPEND ADDSRC sqlite3/sqlite3.c)	
 elseif(WIN32)
+	if (CMAKE_BUILD_TYPE STREQUAL "WINNT")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTARGETWINNT")
+		set(WINDIR winnt)
+	else()
+		set(WINDIR win32)
+	endif()
 #sqlite3
 	list(APPEND ADDSRC sqlite3/sqlite3.c)	
 #pthreads
@@ -48,9 +54,9 @@ elseif(WIN32)
 		add_library(pthread SHARED IMPORTED)
 		set_target_properties(pthread PROPERTIES 
 			IMPORTED_LOCATION
-			${CYANDEXDISK_SOURCE_DIR}/win32/pthreads-win32/lib/pthreadGC1.dll
-			IMPORTED_IMPLIB ${CYANDEXDISK_SOURCE_DIR}/win32/pthreads-win32/lib/libpthreadGC1.a)	
-		include_directories(${CYANDEXDISK_SOURCE_DIR}/win32/pthreads-win32/include)	
+			${CYANDEXDISK_SOURCE_DIR}/${WINDIR}/pthreads-win32/lib/pthreadGC1.dll
+			IMPORTED_IMPLIB ${CYANDEXDISK_SOURCE_DIR}/${WINDIR}/pthreads-win32/lib/libpthreadGC1.a)	
+		include_directories(${CYANDEXDISK_SOURCE_DIR}/${WINDIR}/pthreads-win32/include)	
 	endif()
 	list(APPEND ADDLIBS pthread)
 else()
