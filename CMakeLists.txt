@@ -49,15 +49,15 @@ elseif(WIN32)
 #sqlite3
 	list(APPEND ADDSRC sqlite3/sqlite3.c)	
 #pthreads
-	find_package(Threads)
-	if (NOT Threads_FOUND)
+#	find_package(Threads)
+#	if (NOT Threads_FOUND)
 		add_library(pthread SHARED IMPORTED)
 		set_target_properties(pthread PROPERTIES 
 			IMPORTED_LOCATION
 			${CYANDEXDISK_SOURCE_DIR}/${WINDIR}/pthreads-win32/lib/pthreadGC1.dll
 			IMPORTED_IMPLIB ${CYANDEXDISK_SOURCE_DIR}/${WINDIR}/pthreads-win32/lib/libpthreadGC1.a)	
 		include_directories(${CYANDEXDISK_SOURCE_DIR}/${WINDIR}/pthreads-win32/include)	
-	endif()
+#	endif()
 	list(APPEND ADDLIBS pthread)
 else()
 	find_package(CURL)
