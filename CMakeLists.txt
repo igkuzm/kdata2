@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.0)
 
 set(TARGET kdata2)
 
@@ -13,7 +13,6 @@ endif ()
 project(
 	${TARGET} VERSION 1.1 
 	DESCRIPTION "C library for SQLite database with Yandex Disk sync"
-	HOMEPAGE_URL ""
 	LANGUAGES C 
 )
 
