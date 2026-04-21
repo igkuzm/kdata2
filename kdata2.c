@@ -1108,7 +1108,8 @@ int kdata2_init(
 		sprintf(SQL, 
 				"CREATE TABLE IF NOT EXISTS '%s' (id INT);"
 								, table->tablename);
-		kdata2_sqlite3_exec(d, SQL);
+		int k = kdata2_sqlite3_exec(d, SQL);
+		printf("\n\n\nK: %d\n\n\n\n", k);
 
 		sprintf(SQL, 
 							"ALTER TABLE '%s' "
