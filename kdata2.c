@@ -1112,13 +1112,13 @@ int kdata2_init(
 
 		sprintf(SQL, 
 							"ALTER TABLE '%s' "
-											"ADD COLUMN %s TEXT;", 
+											"ADD COLUMN '%s' TEXT;", 
 							table->tablename, UUIDCOLUMN);
 		kdata2_sqlite3_exec(d, SQL);
 
 		sprintf(SQL, 
 							"ALTER TABLE '%s' "
-											"ADD COLUMN timestamp INT;", 
+											"ADD COLUMN 'timestamp' INT;", 
 							table->tablename);
 		kdata2_sqlite3_exec(d, SQL);
 
@@ -1144,7 +1144,7 @@ int kdata2_init(
 				case KDATA2_TYPE_NUMBER:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
-											"ADD COLUMN %s INT;", 
+											"ADD COLUMN '%s' INT;", 
 							table->tablename, col->columnname);
 					kdata2_sqlite3_exec(d, SQL);
 					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
@@ -1152,7 +1152,7 @@ int kdata2_init(
 				case KDATA2_TYPE_TEXT:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
-											"ADD COLUMN %s TEXT;", 
+											"ADD COLUMN '%s' TEXT;", 
 							table->tablename, col->columnname);
 					kdata2_sqlite3_exec(d, SQL);
 					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
@@ -1160,7 +1160,7 @@ int kdata2_init(
 				case KDATA2_TYPE_DATA:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
-											"ADD COLUMN %s BLOB;", 
+											"ADD COLUMN '%s' BLOB;", 
 							table->tablename, col->columnname);
 					kdata2_sqlite3_exec(d, SQL);
 					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
@@ -1168,7 +1168,7 @@ int kdata2_init(
 				case KDATA2_TYPE_FLOAT:
 					sprintf(SQL, 
 							"ALTER TABLE '%s' "
-											"ADD COLUMN %s REAL;", 
+											"ADD COLUMN '%s' REAL;", 
 							table->tablename, col->columnname);
 					kdata2_sqlite3_exec(d, SQL);
 					//sqlite3_exec(d->db, SQL, NULL, NULL, NULL);
