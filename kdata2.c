@@ -981,7 +981,7 @@ int kdata2_init(
 		"timestamp INT, "
 		"local INT, "
 		"deleted INT "
-		")"
+		");"
 		;	
 
 	if (on_log)
