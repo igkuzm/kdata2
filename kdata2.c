@@ -973,7 +973,7 @@ int kdata2_init(
 	struct kdata2_table * table, **tables;
 
 	char SQL_updates[] = 
-		"CREATE TABLE IF NOT EXISTS "
+		"CREATE TABLE "
 		"_kdata2_updates "
 		"( "
 		"tablename TEXT, "
