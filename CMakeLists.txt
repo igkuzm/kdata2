@@ -26,13 +26,7 @@ add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 include_directories(${KDATA2_SOURCE_DIR})	
 include_directories(${KDATA2_SOURCE_DIR}/sqlite3)
 
-if(ANDROID)
-	SET(SQLITE_SRC sqlite3/sqlite3.c)
-elseif(WIN32)
-	SET(SQLITE_SRC sqlite3/sqlite3.c)
-else()
-	LIST(APPEND ADDLIBS sqlite3)
-endif()
+SET(SQLITE_SRC sqlite3/sqlite3.c)
 
 # Determine the location of the libraries to use based on the platform.
 if(ANDROID)
