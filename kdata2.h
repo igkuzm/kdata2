@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 25.10.2024
+ * Last Modified Date: 21.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -33,10 +33,6 @@ extern "C" {
 #ifndef UUIDCOLUMN
 #define UUIDCOLUMN "ZRECORDNAME"
 #endif /* ifndef UUIDCOLUMN */
-
-#define DATABASE  "kdata_database"
-#define DELETED   "kdata_deleted"
-#define DATAFILES "kdata_data"
 
 int uuid_new(char uuid[37]);
 

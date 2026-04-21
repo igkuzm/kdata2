@@ -20,8 +20,10 @@ if(APPLE)
 	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -framework Foundation")
 endif()
 
-set(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
-add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
+if(${WITH_YANDEX_DISK})
+	set(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
+	add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
+endif()
 
 include_directories(${KDATA2_SOURCE_DIR})	
 include_directories(${KDATA2_SOURCE_DIR}/sqlite3)
@@ -57,11 +59,12 @@ endif()
 
 add_library(${TARGET} STATIC
 	kdata2.c
+	uuid4.c
 	${SQLITE_SRC}
 	${ADDSRC}
 )
 
-target_link_libraries(${TARGET} cYandexDisk ${ADDLIBS})
+target_link_libraries(${TARGET} ${ADDLIBS})
 
 if(${BUILD_TEST})
 	add_executable(${TARGET}_test test.c)
