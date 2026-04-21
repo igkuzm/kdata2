@@ -1106,7 +1106,7 @@ int kdata2_init(
 
 		/* create SQL string */
 		sprintf(SQL, 
-				"CREATE TABLE IF NOT EXISTS '%s' (id INT);"
+				"CREATE TABLE '%s' (id INT);"
 								, table->tablename);
 		int k = kdata2_sqlite3_exec(d, SQL);
 		printf("\n\n\nK: %d\n\n\n\n", k);
