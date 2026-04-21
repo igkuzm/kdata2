@@ -9,6 +9,7 @@
 #include "kdata2.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "modules/yandexdisk/yandexdisk.h"
 
 int callback(
 		void *user_data, int ncols, 
@@ -56,6 +57,14 @@ int main(int argc, char *argv[])
 	kdata2_t *database;
 	kdata2_init(&database, "database.db", "",  NULL, on_log, NULL, on_log, 10, t, NULL);
 	printf("OK\n");
+	
+	printf("init yandexdisk...\t");
+	kdydm_t *module = yandex_disk_module_init(database, "", 1);
+	yandex_disk_module_start(module);
+	printf("OK\n");
+	
+	printf("press any key...\n");
+	getchar();
 
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";
 	printf("kdata2 add text...\t");

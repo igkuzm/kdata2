@@ -1,4 +1,4 @@
-#include "struct.h"
+#include "internal.h"
 #include "yandexdisk.h"
 #include "cYandexDisk/alloc.h"
 #include "cYandexDisk/cYandexDisk.h"
@@ -13,24 +13,6 @@
 #define DATAFILES "kdata_data"
 
 static void * thread(void *data);
-
-static int kdata2_sqlite3_exec(
-		kdata2_t *d, const char *sql)
-{
-	char *errmsg = NULL;
-
-	ON_LOG(d, sql);
-	
-	sqlite3_exec(d->db, sql, NULL, NULL, &errmsg);
-	if (errmsg){
-		ON_ERR(d, 
-				STR("sqlite3_exec: %s: %s", sql, errmsg));		
-		sqlite3_free(errmsg);	
-		return -1;
-	}	
-
-	return 0;
-}
 
 kdydm_t *
 yandex_disk_module_init(
@@ -54,6 +36,7 @@ yandex_disk_module_init(
 		return NULL;
 	}
 
+	module->database = database;
 	strncpy(module->access_token, access_token, 
 			sizeof(module->access_token));
 	module->sec = sec;
@@ -78,7 +61,7 @@ int yandex_disk_module_start(kdydm_t *d)
 		ON_ERR(d->database, STR("can't create thread: %d", err));		
 		return err;
 	}
-
+	
 	return 0;
 }
 
@@ -96,28 +79,28 @@ void main_loop(kdydm_t *d)
 	 exists
 	 * 7. get list of deleted in Yandex Disk
 	 * 8. remove local data for deleted */
+	
+	upload_to_yandex_disk(d);
 }
 
 void * thread(void *data)
 {
-	int i;
 	kdydm_t *d = data; 
 	char SQL[BUFSIZ];
-	struct kdata2_table **tables = NULL;
-	struct kdata2_table *table = NULL;
 
-	assert(data);
+	assert(d);
 	assert(d->database);
 
 	/* Create YD column in each table */
-	tables = d->database->tables;
-	for (table = *tables; table; table = ++*tables) {
-		sprintf(SQL, 
-			"ALTER TABLE '%s' "
-							"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;", 
-							table->tablename);
-		kdata2_sqlite3_exec(d->database, SQL);
-	}
+	do {
+		kdata2_table_for_each(d) {
+			sprintf(SQL, 
+				"ALTER TABLE '%s' "
+				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;", 
+				table->tablename);
+			kdata2_sqlite3_exec(d->database, SQL);
+		}
+	} while (0);
 	
 	/* Create Yandex Disk database */
 	c_yandex_disk_mkdir(

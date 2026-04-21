@@ -170,8 +170,38 @@ kdata2_get_string(
 		kdata2_t * database, 
 		const char *SQL);
 	
-/* init Yandex Disk */
-void EXPORTDLL _yd_daemon_init(kdata2_t * d);
+/* Helpers */
+int EXPORTDLL 
+kdata2_sqlite3_exec(kdata2_t *d, const char *sql);
+
+int EXPORTDLL 
+kdata2_sqlite3_prepare(kdata2_t *d, const char *sql, sqlite3_stmt **stmt);
+
+#define kdata2_sqlite3_for_each(d, sql, stmt) \
+sqlite3_stmt *stmt;\
+int sqlite_step;\
+if (kdata2_sqlite3_prepare(d, sql, &stmt) == 0)\
+for (sqlite_step = sqlite3_step(stmt);\
+	 sqlite_step	!= SQLITE_DONE || ({sqlite3_finalize(stmt); 0;});\
+	 sqlite_step = sqlite3_step(stmt))\
+
+#define kdata2_do_in_database_lock(d) \
+sqlite3_mutex *mutex;\
+for(mutex = sqlite3_db_mutex(d->db), sqlite3_mutex_enter(mutex); \
+	mutex; \
+	sqlite3_mutex_leave(mutex), mutex = NULL)
+
+#define kdata2_table_for_each(d) \
+struct kdata2_table **tables = NULL; \
+struct kdata2_table *table = NULL; \
+tables = d->database->tables; \
+for (table = *tables++; table; table = *tables++)\
+
+#define kdata2_column_for_each(table) \
+struct kdata2_column **columns = NULL; \
+struct kdata2_column *column = NULL; \
+columns = table->columns; \
+for (column = *columns++; column; column = *columns++)\
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */

@@ -55,33 +55,34 @@ int uuid_new(char *uuid){
 	return 0;
 }
 
-static int kdata2_sqlite3_exec(
+int kdata2_sqlite3_exec(
 		kdata2_t *d, const char *sql)
 {
 	char *errmsg = NULL;
 
-	ON_LOG(d, sql);
-	
-	sqlite3_exec(d->db, sql, NULL, NULL, &errmsg);
-	if (errmsg){
-		ON_ERR(d, 
-				STR("sqlite3_exec: %s: %s", sql, errmsg));		
-		sqlite3_free(errmsg);	
-		return -1;
-	}	
+	//kdata2_do_in_database_lock(d)
+	//{
+		ON_LOG(d, sql);
+		sqlite3_exec(d->db, sql, NULL, NULL, &errmsg);
+		if (errmsg){
+			ON_ERR(d, 
+				   STR("sqlite3_exec: %s: %s", sql, errmsg));		
+			sqlite3_free(errmsg);	
+			return -1;
+		}
+	//}
 
 	return 0;
 }
 
-static int kdata2_sqlite3_prepare(
+int kdata2_sqlite3_prepare(
 		kdata2_t *d, const char *sql, sqlite3_stmt **stmt)
 {
 	int res;
 	char *errmsg = NULL;
 	ON_LOG(d, sql);
 
-	/*res = sqlite3_prepare_v2(d->db, sql, -1, stmt, NULL);*/
-	res = sqlite3_prepare(d->db, sql, -1, stmt, NULL);
+	res = sqlite3_prepare_v2(d->db, sql, -1, stmt, NULL);
 	if (res != SQLITE_OK) {
 		ON_ERR(d,
 				STR("sqlite3_prepare: %s: %s", 
@@ -1561,9 +1562,6 @@ void kdata2_get(
 	}
 
 	/* start SQLite request */
-	
-	ON_LOG(d, SQL);
-	/*if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))*/
 	if (kdata2_sqlite3_prepare(d, SQL, &stmt))
 		return;
 
@@ -1597,14 +1595,16 @@ void kdata2_get(
 			/* switch data types */
 			switch (type) {
 				case KDATA2_TYPE_NUMBER: {
-					long number = sqlite3_column_int64(stmt, i);
-					values[i] = &number;	
+					long *number = MALLOC(sizeof(long));
+					number[0] = sqlite3_column_int64(stmt, i);
+					values[i] = number;	
 					sizes[i] = 1;	
 					break;							 
 				} 
 				case KDATA2_TYPE_FLOAT: {
-					double number = sqlite3_column_double(stmt, i);
-					values[i] = &number;	
+					double *number = MALLOC(sizeof(double));
+					number[0] = sqlite3_column_double(stmt, i);
+					values[i] = number;	
 					sizes[i] = 1;	
 					break;							 
 				}										 
@@ -1624,17 +1624,23 @@ void kdata2_get(
 					break;
 				} 
 			}
-			// do callback
-			if (callback){
-				if (callback(user_data, num_cols, types, columns, values, sizes))
-				{
-				   sqlite3_finalize(stmt);
-				   return;
-				}
+		}
+		
+		// do callback
+		if (callback){
+			if (callback(user_data, num_cols, types, columns, values, sizes))
+			{
+			   sqlite3_finalize(stmt);
+			   return;
 			}
 		}
+		
 		free(types);
 		free(columns);
+		for (i = 0; i < num_cols; ++i) {
+			if (types[i] == KDATA2_TYPE_NUMBER || types[i] == KDATA2_TYPE_FLOAT)
+				free(values[i]);
+		}
 		free(values);
 		free(sizes);
 	}
