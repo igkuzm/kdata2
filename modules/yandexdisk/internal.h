@@ -45,6 +45,10 @@
 #include <stdbool.h>
 #endif // WIN32
 
+#define DATABASE  "kdata_database"
+#define DELETED   "kdata_deleted"
+#define DATAFILES "kdata_data"
+
 struct kdata_yandex_disk_module{
 	kdata2_t *database;
 	char access_token[64];         // Yandex Disk access token

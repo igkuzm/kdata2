@@ -5,12 +5,52 @@
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
 #include <assert.h>
+#include <stdio.h>
+#include <time.h>
 
 struct udata_t {
 	kdydm_t *d;
 	struct kdata2_table *table;
 	int uploaded;
 };
+
+int upload_json(
+		kdydm_t *d, 
+		const char *tablename, 
+		const char *uuid,
+		time_t timestamp,
+		char *json)
+{
+	char path[BUFSIZ], *error = NULL;
+
+	sprintf(path, "app:/%s/%s/%s", 
+			DATABASE, tablename, uuid);
+	
+	c_yandex_disk_mkdir(
+						d->access_token, 
+						STR("app:/%s", DATABASE ), 
+						&error);
+
+	if (error){
+		ON_ERR(d->database, error);
+		free(error);
+		return 1;
+	}
+
+	sprintf(path, "%s/%ld", path, timestamp);
+
+	return c_yandex_disk_upload_data(
+			d->access_token, 
+			json, 
+			strlen(json), 
+			path, 
+			true, 
+			true, 
+			NULL, 
+			NULL, 
+			NULL, 
+			NULL);
+}
 
 int upload_to_yandex_disk_cb(
 				void *user_data,
@@ -22,8 +62,10 @@ int upload_to_yandex_disk_cb(
 				)
 {
 	int i;
+	time_t timestamp = 0;
 	struct udata_t *t = user_data;
-	cJSON *json = NULL;
+	char *json = NULL;
+	cJSON *object = NULL;
 	
 	assert(t);
 	assert(t->d);
@@ -32,12 +74,12 @@ int upload_to_yandex_disk_cb(
 	ON_LOG(t->d->database, STR("uploading '%s' table data with uuid: %s", 
 		   t->table->tablename, values[0]));
 	
-	json = cJSON_CreateObject();
-	if (json == NULL){
+	object = cJSON_CreateObject();
+	if (object == NULL){
 		ON_ERR(t->d->database, "can't init JSON");
 	}
 	
-	for (i=0; i<num_cols-1; ++i) {
+	for (i=0; i<num_cols; ++i) {
 		cJSON *item = NULL;
 		char *base64 = NULL;
 		size_t length = 0;
@@ -65,10 +107,24 @@ int upload_to_yandex_disk_cb(
 			break;
 		}
 		if (item)
-			cJSON_AddItemToObject(json, columns[i], item);
+			cJSON_AddItemToObject(object, columns[i], item);
 	}
+			
+	timestamp = *(long *)(values[i-1]);
+	//ON_LOG(t->d->database, cJSON_Print(json));
 	
-	ON_LOG(t->d->database, cJSON_Print(json));
+	json = cJSON_Print(object);
+	if (upload_json(t->d, 
+				t->table->tablename, 
+				values[0], 
+				timestamp,
+				json))
+	{
+
+	}
+
+	cJSON_free(object);
+	free(json);
 	
 	return 0;
 }
@@ -93,7 +149,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 					strcat(SQL, column->columnname);
 					strcat(SQL, ", ");
 				}
-				sprintf(SQL, "%s1 FROM '%s' "
+				sprintf(SQL, "%stimestamp FROM '%s' "
 					   "WHERE 'YANDEX_DISK_UPLOADED' != 1;",
 					   SQL, table->tablename);
 				

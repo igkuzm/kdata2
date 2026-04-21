@@ -58,21 +58,22 @@ int uuid_new(char *uuid){
 int kdata2_sqlite3_exec(
 		kdata2_t *d, const char *sql)
 {
+	int ret = 0;
 	char *errmsg = NULL;
 
-	//kdata2_do_in_database_lock(d)
-	//{
+	kdata2_do_in_database_lock(d)
+	{
 		ON_LOG(d, sql);
 		sqlite3_exec(d->db, sql, NULL, NULL, &errmsg);
 		if (errmsg){
 			ON_ERR(d, 
 				   STR("sqlite3_exec: %s: %s", sql, errmsg));		
 			sqlite3_free(errmsg);	
-			return -1;
+			ret = -1;
 		}
-	//}
+	}
 
-	return 0;
+	return ret;
 }
 
 int kdata2_sqlite3_prepare(

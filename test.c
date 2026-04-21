@@ -2,7 +2,7 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 21.04.2026
+ * Last Modified Date: 22.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -32,6 +32,9 @@ int callback(
 				{
 					printf("%s: data (%ld bytes)\n", columns[i], sizes[i]); break;
 				}			
+
+			default:
+				break;
 		}
 	}
 
@@ -58,10 +61,19 @@ int main(int argc, char *argv[])
 	kdata2_init(&database, "database.db", "",  NULL, on_log, NULL, on_log, 10, t, NULL);
 	printf("OK\n");
 	
+	/* YANDEX DISK */
 	printf("init yandexdisk...\t");
-	kdydm_t *module = yandex_disk_module_init(database, "", 1);
+	char token[128] = {0};
+	FILE *fp = fopen("token", "r");
+	if (fp){
+		fread(token, 1, 58, fp);
+		fclose(fp);
+	}
+	printf("TOKEN: '%s'\t", token);
+	kdydm_t *module = yandex_disk_module_init(database, token, 1);
 	yandex_disk_module_start(module);
 	printf("OK\n");
+	/* */
 	
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";
 	printf("kdata2 add text...\t");
@@ -75,7 +87,7 @@ int main(int argc, char *argv[])
 	printf("kdata2 add data...\t");
 	// get test.jpg
 	size_t size = 220526; 
-	FILE *fp = fopen("test.jpg", "r");
+	fp = fopen("test.jpg", "r");
 	if (!fp){
 		perror("no such file test.jpg\n");
 		return 1;

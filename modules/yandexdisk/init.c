@@ -8,10 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DATABASE  "kdata_database"
-#define DELETED   "kdata_deleted"
-#define DATAFILES "kdata_data"
-
 static void * thread(void *data);
 
 kdydm_t *
