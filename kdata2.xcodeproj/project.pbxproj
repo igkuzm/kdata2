@@ -1,0 +1,367 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AF0237872F974A0C00F32DF6 /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = AF0237852F974A0C00F32DF6 /* sqlite3.h */; };
+		AF0237882F974A0C00F32DF6 /* sqlite3.c in Sources */ = {isa = PBXBuildFile; fileRef = AF0237862F974A0C00F32DF6 /* sqlite3.c */; };
+		AF02378B2F974A4100F32DF6 /* str.h in Headers */ = {isa = PBXBuildFile; fileRef = AF02378A2F974A4100F32DF6 /* str.h */; };
+		AF02378E2F974A4800F32DF6 /* uuid4.c in Sources */ = {isa = PBXBuildFile; fileRef = AF02378C2F974A4800F32DF6 /* uuid4.c */; };
+		AF02378F2F974A4800F32DF6 /* uuid4.h in Headers */ = {isa = PBXBuildFile; fileRef = AF02378D2F974A4800F32DF6 /* uuid4.h */; };
+		AF0237912F974A5100F32DF6 /* log.h in Headers */ = {isa = PBXBuildFile; fileRef = AF0237902F974A5100F32DF6 /* log.h */; };
+		AF0237942F974A5800F32DF6 /* cYandexOAuth.c in Sources */ = {isa = PBXBuildFile; fileRef = AF0237922F974A5800F32DF6 /* cYandexOAuth.c */; };
+		AF0237952F974A5800F32DF6 /* cYandexOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = AF0237932F974A5800F32DF6 /* cYandexOAuth.h */; };
+		AF0237982F974A5D00F32DF6 /* cYandexDisk.h in Headers */ = {isa = PBXBuildFile; fileRef = AF0237962F974A5D00F32DF6 /* cYandexDisk.h */; };
+		AF0237992F974A5D00F32DF6 /* cYandexDisk.c in Sources */ = {isa = PBXBuildFile; fileRef = AF0237972F974A5D00F32DF6 /* cYandexDisk.c */; };
+		AF02379C2F974A6400F32DF6 /* cJSON.h in Headers */ = {isa = PBXBuildFile; fileRef = AF02379A2F974A6400F32DF6 /* cJSON.h */; };
+		AF02379D2F974A6400F32DF6 /* cJSON.c in Sources */ = {isa = PBXBuildFile; fileRef = AF02379B2F974A6400F32DF6 /* cJSON.c */; };
+		AF02379F2F974A6A00F32DF6 /* alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = AF02379E2F974A6A00F32DF6 /* alloc.h */; };
+		AF0237A72F974ADD00F32DF6 /* kdata2.h in Headers */ = {isa = PBXBuildFile; fileRef = AF0237A62F974ADD00F32DF6 /* kdata2.h */; };
+		AF0237A92F974AE100F32DF6 /* kdata2.c in Sources */ = {isa = PBXBuildFile; fileRef = AF0237A82F974AE100F32DF6 /* kdata2.c */; };
+		AF0237C42F974B8C00F32DF6 /* test.c in Sources */ = {isa = PBXBuildFile; fileRef = AF0237C32F974B8C00F32DF6 /* test.c */; };
+		AF0237CC2F974BAC00F32DF6 /* libkdata2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AF02377E2F9749D500F32DF6 /* libkdata2.a */; };
+		AF0237F32F974C8F00F32DF6 /* test.jpg in CopyFiles */ = {isa = PBXBuildFile; fileRef = AF0237F22F974C8F00F32DF6 /* test.jpg */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AF0237BE2F974B7C00F32DF6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF02376A2F97492C00F32DF6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AF02377D2F9749D500F32DF6 /* kdata2 */;
+			remoteInfo = kdata2;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AF0237D52F974BF900F32DF6 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				AF0237F32F974C8F00F32DF6 /* test.jpg in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AF02377E2F9749D500F32DF6 /* libkdata2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkdata2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		AF0237852F974A0C00F32DF6 /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sqlite3.h; path = sqlite3/sqlite3.h; sourceTree = "<group>"; };
+		AF0237862F974A0C00F32DF6 /* sqlite3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sqlite3.c; path = sqlite3/sqlite3.c; sourceTree = "<group>"; };
+		AF02378A2F974A4100F32DF6 /* str.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = str.h; path = cYandexDisk/str.h; sourceTree = "<group>"; };
+		AF02378C2F974A4800F32DF6 /* uuid4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uuid4.c; path = cYandexDisk/uuid4.c; sourceTree = "<group>"; };
+		AF02378D2F974A4800F32DF6 /* uuid4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uuid4.h; path = cYandexDisk/uuid4.h; sourceTree = "<group>"; };
+		AF0237902F974A5100F32DF6 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = log.h; path = cYandexDisk/log.h; sourceTree = "<group>"; };
+		AF0237922F974A5800F32DF6 /* cYandexOAuth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cYandexOAuth.c; path = cYandexDisk/cYandexOAuth.c; sourceTree = "<group>"; };
+		AF0237932F974A5800F32DF6 /* cYandexOAuth.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cYandexOAuth.h; path = cYandexDisk/cYandexOAuth.h; sourceTree = "<group>"; };
+		AF0237962F974A5D00F32DF6 /* cYandexDisk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cYandexDisk.h; path = cYandexDisk/cYandexDisk.h; sourceTree = "<group>"; };
+		AF0237972F974A5D00F32DF6 /* cYandexDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cYandexDisk.c; path = cYandexDisk/cYandexDisk.c; sourceTree = "<group>"; };
+		AF02379A2F974A6400F32DF6 /* cJSON.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cJSON.h; path = cYandexDisk/cJSON.h; sourceTree = "<group>"; };
+		AF02379B2F974A6400F32DF6 /* cJSON.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cJSON.c; path = cYandexDisk/cJSON.c; sourceTree = "<group>"; };
+		AF02379E2F974A6A00F32DF6 /* alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = alloc.h; path = cYandexDisk/alloc.h; sourceTree = "<group>"; };
+		AF0237A62F974ADD00F32DF6 /* kdata2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = kdata2.h; sourceTree = "<group>"; };
+		AF0237A82F974AE100F32DF6 /* kdata2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = kdata2.c; sourceTree = "<group>"; };
+		AF0237BC2F974B6F00F32DF6 /* kdata2_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kdata2_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		AF0237C32F974B8C00F32DF6 /* test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = test.c; sourceTree = "<group>"; };
+		AF0237F22F974C8F00F32DF6 /* test.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = test.jpg; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AF02377C2F9749D500F32DF6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF0237BA2F974B6F00F32DF6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF0237CC2F974BAC00F32DF6 /* libkdata2.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AF0237682F97492C00F32DF6 = {
+			isa = PBXGroup;
+			children = (
+				AF0237892F974A2E00F32DF6 /* cYandexDisk */,
+				AF0237842F9749F300F32DF6 /* sqlite3 */,
+				AF0237A62F974ADD00F32DF6 /* kdata2.h */,
+				AF0237A82F974AE100F32DF6 /* kdata2.c */,
+				AF0237C32F974B8C00F32DF6 /* test.c */,
+				AF0237F22F974C8F00F32DF6 /* test.jpg */,
+				AF02377F2F9749D500F32DF6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AF02377F2F9749D500F32DF6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AF02377E2F9749D500F32DF6 /* libkdata2.a */,
+				AF0237BC2F974B6F00F32DF6 /* kdata2_test */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AF0237842F9749F300F32DF6 /* sqlite3 */ = {
+			isa = PBXGroup;
+			children = (
+				AF0237852F974A0C00F32DF6 /* sqlite3.h */,
+				AF0237862F974A0C00F32DF6 /* sqlite3.c */,
+			);
+			name = sqlite3;
+			sourceTree = "<group>";
+		};
+		AF0237892F974A2E00F32DF6 /* cYandexDisk */ = {
+			isa = PBXGroup;
+			children = (
+				AF02378A2F974A4100F32DF6 /* str.h */,
+				AF02378C2F974A4800F32DF6 /* uuid4.c */,
+				AF02378D2F974A4800F32DF6 /* uuid4.h */,
+				AF0237902F974A5100F32DF6 /* log.h */,
+				AF0237922F974A5800F32DF6 /* cYandexOAuth.c */,
+				AF0237932F974A5800F32DF6 /* cYandexOAuth.h */,
+				AF0237962F974A5D00F32DF6 /* cYandexDisk.h */,
+				AF0237972F974A5D00F32DF6 /* cYandexDisk.c */,
+				AF02379A2F974A6400F32DF6 /* cJSON.h */,
+				AF02379B2F974A6400F32DF6 /* cJSON.c */,
+				AF02379E2F974A6A00F32DF6 /* alloc.h */,
+			);
+			name = cYandexDisk;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		AF02377A2F9749D500F32DF6 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF0237872F974A0C00F32DF6 /* sqlite3.h in Headers */,
+				AF02378B2F974A4100F32DF6 /* str.h in Headers */,
+				AF02378F2F974A4800F32DF6 /* uuid4.h in Headers */,
+				AF0237912F974A5100F32DF6 /* log.h in Headers */,
+				AF0237952F974A5800F32DF6 /* cYandexOAuth.h in Headers */,
+				AF0237982F974A5D00F32DF6 /* cYandexDisk.h in Headers */,
+				AF02379C2F974A6400F32DF6 /* cJSON.h in Headers */,
+				AF02379F2F974A6A00F32DF6 /* alloc.h in Headers */,
+				AF0237A72F974ADD00F32DF6 /* kdata2.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		AF02377D2F9749D500F32DF6 /* kdata2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AF0237802F9749D500F32DF6 /* Build configuration list for PBXNativeTarget "kdata2" */;
+			buildPhases = (
+				AF02377A2F9749D500F32DF6 /* Headers */,
+				AF02377B2F9749D500F32DF6 /* Sources */,
+				AF02377C2F9749D500F32DF6 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = kdata2;
+			productName = kdata2;
+			productReference = AF02377E2F9749D500F32DF6 /* libkdata2.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		AF0237BB2F974B6F00F32DF6 /* kdata2_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AF0237C02F974B8500F32DF6 /* Build configuration list for PBXNativeTarget "kdata2_test" */;
+			buildPhases = (
+				AF0237B92F974B6F00F32DF6 /* Sources */,
+				AF0237BA2F974B6F00F32DF6 /* Frameworks */,
+				AF0237D52F974BF900F32DF6 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AF0237BF2F974B7C00F32DF6 /* PBXTargetDependency */,
+			);
+			name = kdata2_test;
+			productName = kdata2_test;
+			productReference = AF0237BC2F974B6F00F32DF6 /* kdata2_test */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AF02376A2F97492C00F32DF6 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = AF02376B2F97492C00F32DF6 /* Build configuration list for PBXProject "kdata2" */;
+			hasScannedForEncodings = 0;
+			mainGroup = AF0237682F97492C00F32DF6;
+			productRefGroup = AF02377F2F9749D500F32DF6 /* Products */;
+			projectDirPath = "";
+			targets = (
+				AF02377D2F9749D500F32DF6 /* kdata2 */,
+				AF0237BB2F974B6F00F32DF6 /* kdata2_test */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AF02377B2F9749D500F32DF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF0237882F974A0C00F32DF6 /* sqlite3.c in Sources */,
+				AF02378E2F974A4800F32DF6 /* uuid4.c in Sources */,
+				AF0237942F974A5800F32DF6 /* cYandexOAuth.c in Sources */,
+				AF0237992F974A5D00F32DF6 /* cYandexDisk.c in Sources */,
+				AF02379D2F974A6400F32DF6 /* cJSON.c in Sources */,
+				AF0237A92F974AE100F32DF6 /* kdata2.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF0237B92F974B6F00F32DF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF0237C42F974B8C00F32DF6 /* test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AF0237BF2F974B7C00F32DF6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AF02377D2F9749D500F32DF6 /* kdata2 */;
+			targetProxy = AF0237BE2F974B7C00F32DF6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AF02376C2F97492C00F32DF6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+		AF02376D2F97492C00F32DF6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Release;
+		};
+		AF0237812F9749D500F32DF6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = kdata2;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		AF0237822F9749D500F32DF6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = kdata2;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		AF0237C12F974B8500F32DF6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(HOME)/bin";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+				);
+				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)/build/Debug\"";
+				PREBINDING = NO;
+				PRODUCT_NAME = kdata2_test;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		AF0237C22F974B8500F32DF6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(HOME)/bin";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+				);
+				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)/build/Debug\"";
+				PREBINDING = NO;
+				PRODUCT_NAME = kdata2_test;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AF02376B2F97492C00F32DF6 /* Build configuration list for PBXProject "kdata2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AF02376C2F97492C00F32DF6 /* Debug */,
+				AF02376D2F97492C00F32DF6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AF0237802F9749D500F32DF6 /* Build configuration list for PBXNativeTarget "kdata2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AF0237812F9749D500F32DF6 /* Debug */,
+				AF0237822F9749D500F32DF6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AF0237C02F974B8500F32DF6 /* Build configuration list for PBXNativeTarget "kdata2_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AF0237C12F974B8500F32DF6 /* Debug */,
+				AF0237C22F974B8500F32DF6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AF02376A2F97492C00F32DF6 /* Project object */;
+}

@@ -1,0 +1,7 @@
+.*
+*~
+partner_token.h
+#*
+build
+*.pbxuser
+*.mode2*

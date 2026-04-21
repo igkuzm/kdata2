@@ -1529,7 +1529,7 @@ char * kdata2_get_string(
 	
 	ret_str = strdup(str);
 	sqlite3_finalize(stmt);
-	return ret_str;
+	return (char *)ret_str;
 }	
 
 void kdata2_get(
