@@ -880,20 +880,6 @@ void _yd_update(kdata2_t *d){
 		return;
 	}	
 
-	/* Create Yandex Disk database */
-	c_yandex_disk_mkdir(
-			d->access_token, 
-			STR("app:/%s", DATABASE ), 
-			NULL);
-	c_yandex_disk_mkdir(
-			d->access_token, 
-			STR("app:/%s", DELETED  ), 
-			NULL);
-	c_yandex_disk_mkdir(
-			d->access_token, 
-			STR("app:/%s", DATAFILES), 
-			NULL);
-
 	/* do for each update in local updates table */
 	SQL = "SELECT * from _kdata2_updates"; 
 	if (kdata2_sqlite3_exec(d, SQL))
@@ -920,6 +906,20 @@ static void * _yd_thread(void * data)
 	struct kdata2 *d = data; 
 	if (!d)
 		return NULL;
+	
+	/* Create Yandex Disk database */
+	c_yandex_disk_mkdir(
+						d->access_token, 
+						STR("app:/%s", DATABASE ), 
+						NULL);
+	c_yandex_disk_mkdir(
+						d->access_token, 
+						STR("app:/%s", DELETED  ), 
+						NULL);
+	c_yandex_disk_mkdir(
+						d->access_token, 
+						STR("app:/%s", DATAFILES), 
+						NULL);	
 
 	while (d && d->do_update) {
 		ON_LOG(d, "updating data...");	
