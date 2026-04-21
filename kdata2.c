@@ -1048,7 +1048,7 @@ int kdata2_init(
 	} 
 
 	/* allocate and fill tables array */
-	d->tables = MALLOC(8);
+	d->tables = MALLOC(sizeof(char*));
 	if (d->tables == NULL){
 		ON_ERR(d, "can't allocate kdata2_t_table");		
 		return -1;
