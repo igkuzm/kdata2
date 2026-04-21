@@ -21,8 +21,13 @@ if(APPLE)
 endif()
 
 if(${WITH_YANDEX_DISK})
-	set(CYANDEXDISK_SOURCE_DIR ${KDATA2_SOURCE_DIR}/cYandexDisk)
+	set(CYANDEXDISK_SOURCE_DIR
+		${KDATA2_SOURCE_DIR}/modules/yandexdisk/cYandexDisk)
 	add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
+	list(APPEND ADDSRC modules/yandexdisk/init.c)	
+	list(APPEND ADDSRC modules/yandexdisk/upload.c)	
+	list(APPEND ADDSRC modules/yandexdisk/cYandexDisk/cJSON.c)	
+	list(APPEND ADDLIBS cYandexDisk)	
 endif()
 
 include_directories(${KDATA2_SOURCE_DIR})	

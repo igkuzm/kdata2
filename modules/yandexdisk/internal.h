@@ -1,5 +1,5 @@
 /**
- * File              : struct.h
+ * File              : internal.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
  * Last Modified Date: 21.04.2026
@@ -53,5 +53,7 @@ struct kdata_yandex_disk_module{
 	pthread_t tid;
 	pthread_mutex_t mutex;
 };
+
+void upload_to_yandex_disk(struct kdata_yandex_disk_module *);
 
 #endif /* ifndef YANDEX_DISK_STRUCT_H */

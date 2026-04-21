@@ -2,7 +2,7 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 27.03.2023
+ * Last Modified Date: 21.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -63,9 +63,6 @@ int main(int argc, char *argv[])
 	yandex_disk_module_start(module);
 	printf("OK\n");
 	
-	printf("press any key...\n");
-	getchar();
-
 	char *uuid = "80ff0830-9160-467c-897b-722f03e802bd";
 	printf("kdata2 add text...\t");
 	kdata2_set_text_for_uuid(database, "pers", "name", "Igor V.", uuid);
