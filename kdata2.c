@@ -1564,7 +1564,8 @@ void kdata2_get(
 	/* start SQLite request */
 	
 	ON_LOG(d, SQL);
-	if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
+	/*if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))*/
+	if (kdata2_sqlite3_prepare(d, SQL, &stmt))
 		return;
 
 	num_cols = sqlite3_column_count(stmt); //number of colums
