@@ -1515,7 +1515,8 @@ char * kdata2_get_string(
 	}
 
 	ON_LOG(d, SQL);
-	if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
+	/*if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))*/
+	if (kdata2_sqlite3_prepare(d, SQL, &stmt))
 		return NULL;
 
 	// get first value
