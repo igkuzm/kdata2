@@ -1421,7 +1421,8 @@ char * kdata2_set_data_for_uuid(
 	
 	sprintf(SQL, "UPDATE '%s' SET '%s' = (?) WHERE %s = '%s'", tablename, column, UUIDCOLUMN, uuid);
 	
-	if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
+	/*if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))*/
+	if (kdata2_sqlite3_prepare(d, SQL, &stmt))
 		return NULL;
 
 	res = sqlite3_bind_blob(stmt, 1, data, len, SQLITE_TRANSIENT);
