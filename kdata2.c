@@ -1030,12 +1030,15 @@ int kdata2_init(
 	
 	/* init SQLIte database */
 	/* create database if needed */
-	ON_LOG(d, STR("sqlite3_open_v2: %s", d->filepath));	
-	err = sqlite3_open_v2(
+	ON_LOG(d, STR("sqlite3_open: %s", d->filepath));	
+	/*err = sqlite3_open_v2(*/
+			/*d->filepath, */
+			/*&(d->db), */
+			/*SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, */
+			/*NULL);*/
+	err = sqlite3_open(
 			d->filepath, 
-			&(d->db), 
-			SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 
-			NULL);
+			&(d->db));
 	if (err){
 		ON_ERR(d,  
 			STR("failed to open/create database at path: '%s': %s", 
