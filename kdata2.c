@@ -75,17 +75,18 @@ static int kdata2_sqlite3_exec(
 	return 0;
 }
 
-static int kdata2_sqlite3_prepare_v2(
+static int kdata2_sqlite3_prepare(
 		kdata2_t *d, const char *sql, sqlite3_stmt **stmt)
 {
 	int res;
 	char *errmsg = NULL;
 	ON_LOG(d, sql);
 
-	res = sqlite3_prepare_v2(d->db, sql, -1, stmt, NULL);
+	/*res = sqlite3_prepare_v2(d->db, sql, -1, stmt, NULL);*/
+	res = sqlite3_prepare(d->db, sql, -1, stmt, NULL);
 	if (res != SQLITE_OK) {
 		ON_ERR(d,
-				STR("sqlite3_prepare_v2: %s: %s", 
+				STR("sqlite3_prepare: %s: %s", 
 					sql, sqlite3_errmsg(d->db)));		
 		return -1;
 	}	
@@ -148,7 +149,7 @@ void _after_upload_to_YandexDisk(
 						update->table, UUIDCOLUMN, update->uuid);
 	ON_LOG(update->d, SQL);
 
-	if (kdata2_sqlite3_prepare_v2(update->d, SQL, &stmt))
+	if (kdata2_sqlite3_prepare(update->d, SQL, &stmt))
 		return;
 	
 	while (sqlite3_step(stmt) != SQLITE_DONE)
@@ -225,7 +226,7 @@ void _upload_local_data_to_Yandex_Disk(
 				update->table, UUIDCOLUMN, update->uuid);
 	ON_LOG(update->d, SQL);
 
-	if (kdata2_sqlite3_prepare_v2(update->d, SQL, 
+	if (kdata2_sqlite3_prepare(update->d, SQL, 
 				&stmt))
 		return;
 	
@@ -782,7 +783,7 @@ static int _for_each_file_in_YandexDisk_database(
 			STR("SELECT timestamp FROM '%s' WHERE %s = '%s'", 
 					table->tablename, UUIDCOLUMN, file->name);
 		
-		if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))
+		if (kdata2_sqlite3_prepare(d, SQL, &stmt))
 			continue;
 
 		while (sqlite3_step(stmt) != SQLITE_DONE)
