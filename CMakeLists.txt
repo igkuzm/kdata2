@@ -30,8 +30,6 @@ SET(SQLITE_SRC sqlite3/sqlite3.c)
 
 # Determine the location of the libraries to use based on the platform.
 if(ANDROID)
-#sqlite3
-	list(APPEND ADDSRC sqlite3/sqlite3.c)	
 elseif(WIN32)
 	if (CMAKE_BUILD_TYPE STREQUAL "WINNT")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTARGETWINNT")
@@ -39,8 +37,6 @@ elseif(WIN32)
 	else()
 		set(WINDIR win32)
 	endif()
-#sqlite3
-	list(APPEND ADDSRC sqlite3/sqlite3.c)	
 #pthreads
 #	find_package(Threads)
 #	if (NOT Threads_FOUND)
@@ -61,6 +57,7 @@ endif()
 
 add_library(${TARGET} STATIC
 	kdata2.c
+	${SQLITE_SRC}
 	${ADDSRC}
 )
 
