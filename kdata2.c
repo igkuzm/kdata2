@@ -973,7 +973,7 @@ int kdata2_init(
 	struct kdata2_table * table, **tables;
 
 	char SQL_updates[] = 
-		"CREATE TABLE "
+		"CREATE TABLE IF NOT EXISTS "
 		"_kdata2_updates "
 		"( "
 		"tablename TEXT, "
@@ -1106,7 +1106,7 @@ int kdata2_init(
 
 		/* create SQL string */
 		sprintf(SQL, 
-				"CREATE TABLE '%s' (id INT);"
+				"CREATE TABLE IF NOT EXISTS '%s' (id INT);"
 								, table->tablename);
 		kdata2_sqlite3_exec(d, SQL);
 
