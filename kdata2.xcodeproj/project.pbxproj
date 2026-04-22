@@ -31,6 +31,11 @@
 		AF05BBDE2F97879800707DA1 /* internal.h in Headers */ = {isa = PBXBuildFile; fileRef = AF05BBDD2F97879800707DA1 /* internal.h */; };
 		AF05BCD52F9797CE00707DA1 /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = AF05BCD42F9797CE00707DA1 /* libcurl.dylib */; };
 		AF05BDF82F97A81100707DA1 /* base64.h in Headers */ = {isa = PBXBuildFile; fileRef = AF05BDF72F97A81100707DA1 /* base64.h */; };
+		AFEAD0192F98DF0E0086F618 /* test.c in Sources */ = {isa = PBXBuildFile; fileRef = AFEAD0182F98DF0E0086F618 /* test.c */; };
+		AFEAD01B2F98DF2C0086F618 /* libkdata2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AF02377E2F9749D500F32DF6 /* libkdata2.a */; };
+		AFEAD01C2F98DF2C0086F618 /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = AF05BCD42F9797CE00707DA1 /* libcurl.dylib */; };
+		AFEAD0252F98DF760086F618 /* cYandexOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = AFEAD0232F98DF760086F618 /* cYandexOAuth.h */; };
+		AFEAD0262F98DF760086F618 /* cYandexOAuth.c in Sources */ = {isa = PBXBuildFile; fileRef = AFEAD0242F98DF760086F618 /* cYandexOAuth.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,6 +44,13 @@
 			containerPortal = AF02376A2F97492C00F32DF6 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AF02377D2F9749D500F32DF6;
+			remoteInfo = kdata2;
+		};
+		AFEAD0112F98DEE40086F618 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF02376A2F97492C00F32DF6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AF02377D2F9749D500F32DF6 /* kdata2 */;
 			remoteInfo = kdata2;
 		};
 /* End PBXContainerItemProxy section */
@@ -80,8 +92,12 @@
 		AF05BBB12F97835900707DA1 /* init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = init.c; path = modules/yandexdisk/init.c; sourceTree = "<group>"; };
 		AF05BBD32F9786D300707DA1 /* upload.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = upload.c; path = modules/yandexdisk/upload.c; sourceTree = "<group>"; };
 		AF05BBDD2F97879800707DA1 /* internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = internal.h; path = modules/yandexdisk/internal.h; sourceTree = "<group>"; };
-		AF05BCD42F9797CE00707DA1 /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = /usr/lib/libcurl.dylib; sourceTree = "<absolute>"; };
+		AF05BCD42F9797CE00707DA1 /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = /opt/local/lib/libcurl.dylib; sourceTree = "<absolute>"; };
 		AF05BDF72F97A81100707DA1 /* base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = base64.h; path = modules/yandexdisk/base64.h; sourceTree = "<group>"; };
+		AFEAD00F2F98DEE00086F618 /* cYandexDisk_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cYandexDisk_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		AFEAD0182F98DF0E0086F618 /* test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = test.c; path = modules/yandexdisk/cYandexDisk/test.c; sourceTree = "<group>"; };
+		AFEAD0232F98DF760086F618 /* cYandexOAuth.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cYandexOAuth.h; path = modules/yandexdisk/cYandexDisk/cYandexOAuth.h; sourceTree = "<group>"; };
+		AFEAD0242F98DF760086F618 /* cYandexOAuth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cYandexOAuth.c; path = modules/yandexdisk/cYandexDisk/cYandexOAuth.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +114,15 @@
 			files = (
 				AF0237CC2F974BAC00F32DF6 /* libkdata2.a in Frameworks */,
 				AF05BCD52F9797CE00707DA1 /* libcurl.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFEAD00D2F98DEE00086F618 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AFEAD01B2F98DF2C0086F618 /* libkdata2.a in Frameworks */,
+				AFEAD01C2F98DF2C0086F618 /* libcurl.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,6 +152,7 @@
 			children = (
 				AF02377E2F9749D500F32DF6 /* libkdata2.a */,
 				AF0237BC2F974B6F00F32DF6 /* kdata2_test */,
+				AFEAD00F2F98DEE00086F618 /* cYandexDisk_test */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -150,11 +176,14 @@
 				AF05BB9F2F9782D400707DA1 /* str.h */,
 				AF05BBAC2F97834E00707DA1 /* cYandexDisk.c */,
 				AF05BBAD2F97834E00707DA1 /* cYandexDisk.h */,
+				AFEAD0232F98DF760086F618 /* cYandexOAuth.h */,
+				AFEAD0242F98DF760086F618 /* cYandexOAuth.c */,
 				AF05BBB02F97835900707DA1 /* yandexdisk.h */,
 				AF05BBB12F97835900707DA1 /* init.c */,
 				AF05BBD32F9786D300707DA1 /* upload.c */,
 				AF05BBDD2F97879800707DA1 /* internal.h */,
 				AF05BDF72F97A81100707DA1 /* base64.h */,
+				AFEAD0182F98DF0E0086F618 /* test.c */,
 			);
 			name = yandexdisk;
 			sourceTree = "<group>";
@@ -179,6 +208,7 @@
 				AF05BBB32F97835900707DA1 /* yandexdisk.h in Headers */,
 				AF05BBDE2F97879800707DA1 /* internal.h in Headers */,
 				AF05BDF82F97A81100707DA1 /* base64.h in Headers */,
+				AFEAD0252F98DF760086F618 /* cYandexOAuth.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,6 +250,23 @@
 			productReference = AF0237BC2F974B6F00F32DF6 /* kdata2_test */;
 			productType = "com.apple.product-type.tool";
 		};
+		AFEAD00E2F98DEE00086F618 /* cYandexDisk_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AFEAD0152F98DEEC0086F618 /* Build configuration list for PBXNativeTarget "cYandexDisk_test" */;
+			buildPhases = (
+				AFEAD00C2F98DEE00086F618 /* Sources */,
+				AFEAD00D2F98DEE00086F618 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AFEAD0122F98DEE40086F618 /* PBXTargetDependency */,
+			);
+			name = cYandexDisk_test;
+			productName = cYandexDisk_test;
+			productReference = AFEAD00F2F98DEE00086F618 /* cYandexDisk_test */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -233,6 +280,7 @@
 			targets = (
 				AF02377D2F9749D500F32DF6 /* kdata2 */,
 				AF0237BB2F974B6F00F32DF6 /* kdata2_test */,
+				AFEAD00E2F98DEE00086F618 /* cYandexDisk_test */,
 			);
 		};
 /* End PBXProject section */
@@ -249,6 +297,7 @@
 				AF05BBAE2F97834E00707DA1 /* cYandexDisk.c in Sources */,
 				AF05BBB42F97835900707DA1 /* init.c in Sources */,
 				AF05BBD42F9786D300707DA1 /* upload.c in Sources */,
+				AFEAD0262F98DF760086F618 /* cYandexOAuth.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -260,6 +309,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AFEAD00C2F98DEE00086F618 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AFEAD0192F98DF0E0086F618 /* test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -267,6 +324,11 @@
 			isa = PBXTargetDependency;
 			target = AF02377D2F9749D500F32DF6 /* kdata2 */;
 			targetProxy = AF0237BE2F974B7C00F32DF6 /* PBXContainerItemProxy */;
+		};
+		AFEAD0122F98DEE40086F618 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AF02377D2F9749D500F32DF6 /* kdata2 */;
+			targetProxy = AFEAD0112F98DEE40086F618 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -355,6 +417,44 @@
 			};
 			name = Release;
 		};
+		AFEAD0162F98DEEC0086F618 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(HOME)/bin";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/local/lib,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = cYandexDisk_test;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		AFEAD0172F98DEEC0086F618 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(HOME)/bin";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/local/lib,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = cYandexDisk_test;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -381,6 +481,15 @@
 			buildConfigurations = (
 				AF0237C12F974B8500F32DF6 /* Debug */,
 				AF0237C22F974B8500F32DF6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AFEAD0152F98DEEC0086F618 /* Build configuration list for PBXNativeTarget "cYandexDisk_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AFEAD0162F98DEEC0086F618 /* Debug */,
+				AFEAD0172F98DEEC0086F618 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
