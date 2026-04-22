@@ -14,6 +14,7 @@
 #include "uuid4.h"
 #include "log.h"
 #include "alloc.h"
+#include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,6 +93,34 @@ int kdata2_sqlite3_prepare(
 	}	
 	return 0;
 }
+
+int kdata2_sql_select_table_request(
+		kdata2_t *d, char SQL[], const char *tablename)
+{
+	assert(SQL);
+	do {
+		kdata2_table_for_each(d) {
+			if (strcmp(tablename, table->tablename) == 0)
+			{
+				sprintf(SQL, "SELECT %s, ", UUIDCOLUMN);
+				do {
+					kdata2_column_for_each(table) {
+						strcat(SQL, column->columnname);
+						strcat(SQL, ", ");
+					}
+				} while(0);
+				sprintf(SQL, "%stimestamp FROM '%s' ", 
+						SQL, table->tablename);
+				return 0;
+			}
+	 }
+	} while(0);
+
+	ON_ERR(d, STR("No table with name: %s", tablename));		
+	return 1;
+}
+
+
 
 //int _remove_local_update(
 		//void *data, const char *error)

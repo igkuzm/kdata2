@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 21.04.2026
+ * Last Modified Date: 22.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -177,6 +177,10 @@ kdata2_sqlite3_exec(kdata2_t *d, const char *sql);
 int EXPORTDLL 
 kdata2_sqlite3_prepare(kdata2_t *d, const char *sql, sqlite3_stmt **stmt);
 
+int EXPORTDLL 
+kdata2_sql_select_table_request(
+		kdata2_t *d, char sql[], const char *tablename);
+
 #define kdata2_sqlite3_for_each(d, sql, stmt) \
 sqlite3_stmt *stmt;\
 int sqlite_step;\
@@ -194,7 +198,7 @@ for(mutex = sqlite3_db_mutex(d->db), sqlite3_mutex_enter(mutex); \
 #define kdata2_table_for_each(d) \
 struct kdata2_table **tables = NULL; \
 struct kdata2_table *table = NULL; \
-tables = d->database->tables; \
+tables = d->tables; \
 for (table = *tables++; table; table = *tables++)\
 
 #define kdata2_column_for_each(table) \

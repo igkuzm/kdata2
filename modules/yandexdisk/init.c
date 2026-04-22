@@ -103,7 +103,7 @@ void * thread(void *data)
 
 	/* Create YD column in each table */
 	do {
-		kdata2_table_for_each(d) {
+		kdata2_table_for_each(d->database) {
 			sprintf(SQL, 
 				"ALTER TABLE '%s' "
 				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;", 

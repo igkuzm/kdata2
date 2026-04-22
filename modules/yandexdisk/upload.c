@@ -14,19 +14,25 @@ struct udata_t {
 	char *uuid;
 	time_t timestamp;
 	int deleted;
+	int uploaded;
 };
 
-int upload_json(
+static int upload_json(
 		kdydm_t *d, 
 		const char *tablename, 
 		const char *uuid,
 		time_t timestamp,
+		int deleted,
 		char *json)
 {
 	char path[BUFSIZ];
 
-	sprintf(path, "app:/%s/%s/%s", 
-			DATABASE, tablename, uuid);
+	if (deleted)
+		sprintf(path, "app:/%s/%s/%s", 
+				DELETED, tablename, uuid);
+	else
+		sprintf(path, "app:/%s/%s/%s", 
+				DATABASE, tablename, uuid);
 	
 	ON_LOG(d->database, STR("create path: %s", 
 		   path));
@@ -52,7 +58,7 @@ int upload_json(
 			NULL);
 }
 
-int upload_data_row_to_yandex_disk(
+static int upload_data_row_to_yandex_disk(
 				void *user_data,
 				int	num_cols,
 				enum KDATA2_TYPE types[],
@@ -71,8 +77,9 @@ int upload_data_row_to_yandex_disk(
 	assert(t->d);
 	assert(t->d->database);
 	
-	ON_LOG(t->d->database, STR("uploading '%s' table data with uuid: %s", 
-		   t->tablename, values[0]));
+	ON_LOG(t->d->database, STR("%s '%s' table data with uuid: %s", 
+				t->deleted?"deleting":"uploading",
+		    t->tablename, values[0]));
 	
 	object = cJSON_CreateObject();
 	if (object == NULL){
@@ -120,6 +127,7 @@ int upload_data_row_to_yandex_disk(
 				t->tablename, 
 				uuid, 
 				timestamp,
+				t->deleted,
 				json))
 	{
 		// on error
@@ -133,6 +141,7 @@ int upload_data_row_to_yandex_disk(
 				"WHERE %s = '%s';", 
 				t->tablename, UUIDCOLUMN, uuid);
 		kdata2_sqlite3_exec(t->d->database, SQL);
+		t->uploaded = 1;
 	}
 
 	cJSON_free(object);
@@ -141,7 +150,7 @@ int upload_data_row_to_yandex_disk(
 	return 0;
 }
 
-int get_updates(
+static int get_updates(
 				void *user_data,
 				int	num_cols,
 				enum KDATA2_TYPE types[],
@@ -162,8 +171,43 @@ int get_updates(
 	t.uuid = values[1];
 	t.timestamp = *(long *)values[2];
 	t.deleted = *(long *)values[4];
+	t.uploaded = 0;
 
-	/* TODO: get row from table and upload to YD <22-04-26, yourname> */
+	if (t.deleted)
+	{
+		char *json = "";
+		if (upload_json(t.d, 
+					t.tablename, 
+					t.uuid, 
+					t.timestamp,
+					t.deleted,
+					json))
+		{
+			// on error
+			ON_LOG(t.d->database, "can't delete data");
+		} else {
+			t.uploaded = 1;
+		}
+		goto get_updates_end;
+	}
+
+	/* get row from table and upload to YD */
+	if (kdata2_sql_select_table_request(
+				t.d->database, SQL, t.tablename))
+		return 0;
+	
+	sprintf(SQL, "%sWHERE %s = '%s'", 
+			SQL, UUIDCOLUMN, t.uuid);
+	kdata2_get(d->database, SQL, 
+			&t, upload_data_row_to_yandex_disk);
+	
+get_updates_end:
+	if (t.uploaded) {
+		// remove from _kdata2_updates
+		sprintf(SQL, "DELETE FROM _kdata2_updates WHERE "
+				"uuid = '%s'", t.uuid);
+		kdata2_sqlite3_exec(d->database, SQL);
+	}
 	
 	return 0;
 }
@@ -182,11 +226,12 @@ void upload_to_yandex_disk(kdydm_t *d)
 	
 	// new records in tables
 	do {
-		kdata2_table_for_each(d) {
+		kdata2_table_for_each(d->database) {
 			struct udata_t t;
 			t.d = d;
 			t.tablename = table->tablename;
 			t.deleted = 0;
+			t.uploaded = 0;
 			
 			sprintf(SQL, "SELECT %s, ", UUIDCOLUMN);
 			do {
