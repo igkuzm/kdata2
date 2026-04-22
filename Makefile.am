@@ -1,8 +1,7 @@
 #config to create kdata2 lib with automake
 ACLOCAL_AMFLAGS="-I m4"
 
-SUBDIRS = cYandexDisk
-
+SUBDIRS = 
 lib_LTLIBRARIES = libkdata2.la
 
 libkdata2_la_SOURCES = \
@@ -25,6 +24,16 @@ endif
 if WIN64
 libkdata2_la_CFLAGS += \
 	-IcYandexDisk/curl/windows/win64/include -IcYandexDisk/pthreads-win32/include
+endif
+
+if WITH_TEST
+libkdata2_la_SOURCES += test.c 
+endif
+
+if WITH_YANDEX_DISK
+SUBDIRS += cYandexDisk
+libkdata2_la_SOURCES += \
+		modules/yandexdisk/init.c modules/yandexdisk/upload.c 
 endif
 
 libkdata2_la_LIBADD = $(CYD_OBJ) $(CURL_LINK) $(CYD_LINK)

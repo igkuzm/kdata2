@@ -12,6 +12,22 @@ AC_PROG_CXX
 
 AC_CONFIG_SRCDIR
 
+AC_ARG_ENABLE([withtest], 
+							[AS_HELP_STRING([--with-test], [Build
+							 'test' executable @<:@no@:>@])],
+							 [with_test=yes],
+							 [with_test=no])
+
+AM_CONDITIONAL([WITH_TEST], [test "$with_test" = "yes"])
+
+AC_ARG_ENABLE([yandexdisk], 
+							[AS_HELP_STRING([--with-yandexdisk], [Build
+							 Yandex Disk support @<:@no@:>@])],
+							 [with_yandexdisk=yes],
+							 [with_yandexdisk=no])
+
+AM_CONDITIONAL([WITH_YANDEX_DISK], [test "$with_yandexdisk" = "yes"])
+
 AC_CANONICAL_HOST
 case "${host_os}" in
     cygwin*|mingw*)
