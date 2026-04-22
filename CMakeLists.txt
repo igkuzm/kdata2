@@ -71,7 +71,7 @@ add_library(${TARGET} STATIC
 
 target_link_libraries(${TARGET} ${ADDLIBS})
 
-if(${BUILD_TEST})
+if(${WITH_TEST})
 	add_executable(${TARGET}_test test.c)
 	target_link_libraries(${TARGET}_test ${TARGET} ${ADDLIBS})
 	file(GLOB files 
