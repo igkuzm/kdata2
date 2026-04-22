@@ -2,7 +2,7 @@
  * File              : internal.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 21.04.2026
+ * Last Modified Date: 22.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 /**
@@ -45,9 +45,9 @@
 #include <stdbool.h>
 #endif // WIN32
 
-#define DATABASE  "kdata_database"
-#define DELETED   "kdata_deleted"
-#define DATAFILES "kdata_data"
+#define DATABASE  "database"
+#define DELETED   "deleted"
+//#define DATAFILES "kdata_data"
 
 struct kdata_yandex_disk_module{
 	kdata2_t *database;

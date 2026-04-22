@@ -87,17 +87,6 @@ void * thread(void *data)
 	assert(d);
 	assert(d->database);
 
-	/* Create YD column in each table */
-	do {
-		kdata2_table_for_each(d) {
-			sprintf(SQL, 
-				"ALTER TABLE '%s' "
-				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;", 
-				table->tablename);
-			kdata2_sqlite3_exec(d->database, SQL);
-		}
-	} while (0);
-	
 	/* Create Yandex Disk database */
 	c_yandex_disk_mkdir(
 						d->access_token, 
@@ -107,11 +96,32 @@ void * thread(void *data)
 						d->access_token, 
 						STR("app:/%s", DELETED  ), 
 						NULL);
-	c_yandex_disk_mkdir(
-						d->access_token, 
-						STR("app:/%s", DATAFILES), 
-						NULL);	
+	//c_yandex_disk_mkdir(
+						//d->access_token, 
+						//STR("app:/%s", DATAFILES), 
+						//NULL);	
 
+	/* Create YD column in each table */
+	do {
+		kdata2_table_for_each(d) {
+			sprintf(SQL, 
+				"ALTER TABLE '%s' "
+				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;", 
+				table->tablename);
+			kdata2_sqlite3_exec(d->database, SQL);
+
+			c_yandex_disk_mkdir(
+						d->access_token, 
+						STR("app:/%s/%s", DATABASE, table->tablename), 
+						NULL);
+		
+			c_yandex_disk_mkdir(
+						d->access_token, 
+						STR("app:/%s/%s", DELETED, table->tablename), 
+						NULL);
+		}
+	} while (0);
+	
 	// run main loop
 	while (d->do_update) {
 		ON_LOG(d->database, "updating data...");	

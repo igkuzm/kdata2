@@ -10,8 +10,10 @@
 
 struct udata_t {
 	kdydm_t *d;
-	struct kdata2_table *table;
-	int uploaded;
+	char *tablename;
+	char *uuid;
+	time_t timestamp;
+	int deleted;
 };
 
 int upload_json(
@@ -21,30 +23,28 @@ int upload_json(
 		time_t timestamp,
 		char *json)
 {
-	char path[BUFSIZ], *error = NULL;
+	char path[BUFSIZ];
 
 	sprintf(path, "app:/%s/%s/%s", 
 			DATABASE, tablename, uuid);
 	
+	ON_LOG(d->database, STR("create path: %s", 
+		   path));
 	c_yandex_disk_mkdir(
 						d->access_token, 
-						STR("app:/%s", DATABASE ), 
-						&error);
-
-	if (error){
-		ON_ERR(d->database, error);
-		free(error);
-		return 1;
-	}
+						path, 
+						NULL);
 
 	sprintf(path, "%s/%ld", path, timestamp);
 
+	ON_LOG(d->database, STR("upload json to path: %s", 
+		   path));
 	return c_yandex_disk_upload_data(
 			d->access_token, 
 			json, 
 			strlen(json), 
 			path, 
-			true, 
+			false, 
 			true, 
 			NULL, 
 			NULL, 
@@ -52,7 +52,7 @@ int upload_json(
 			NULL);
 }
 
-int upload_to_yandex_disk_cb(
+int upload_data_row_to_yandex_disk(
 				void *user_data,
 				int	num_cols,
 				enum KDATA2_TYPE types[],
@@ -64,7 +64,7 @@ int upload_to_yandex_disk_cb(
 	int i;
 	time_t timestamp = 0;
 	struct udata_t *t = user_data;
-	char *json = NULL;
+	char *json = NULL, *uuid = NULL;
 	cJSON *object = NULL;
 	
 	assert(t);
@@ -72,11 +72,12 @@ int upload_to_yandex_disk_cb(
 	assert(t->d->database);
 	
 	ON_LOG(t->d->database, STR("uploading '%s' table data with uuid: %s", 
-		   t->table->tablename, values[0]));
+		   t->tablename, values[0]));
 	
 	object = cJSON_CreateObject();
 	if (object == NULL){
 		ON_ERR(t->d->database, "can't init JSON");
+		return 1;
 	}
 	
 	for (i=0; i<num_cols; ++i) {
@@ -110,21 +111,59 @@ int upload_to_yandex_disk_cb(
 			cJSON_AddItemToObject(object, columns[i], item);
 	}
 			
+	uuid      =  (char *)(values[0]);
 	timestamp = *(long *)(values[i-1]);
 	//ON_LOG(t->d->database, cJSON_Print(json));
 	
 	json = cJSON_Print(object);
 	if (upload_json(t->d, 
-				t->table->tablename, 
-				values[0], 
+				t->tablename, 
+				uuid, 
 				timestamp,
 				json))
 	{
-
+		// on error
+		ON_LOG(t->d->database, "can't upload data");
+	} else {
+		// set as uploaded
+		char SQL[BUFSIZ];
+		ON_LOG(t->d->database, "data uploaded!");
+		sprintf(SQL, 
+				"UPDATE '%s' SET YANDEX_DISK_UPLOADED = 1 "
+				"WHERE %s = '%s';", 
+				t->tablename, UUIDCOLUMN, uuid);
+		kdata2_sqlite3_exec(t->d->database, SQL);
 	}
 
 	cJSON_free(object);
 	free(json);
+	
+	return 0;
+}
+
+int get_updates(
+				void *user_data,
+				int	num_cols,
+				enum KDATA2_TYPE types[],
+				const char *columns[], 
+				void *values[],
+				size_t sizes[]
+				)
+{
+	char SQL[BUFSIZ];
+	kdydm_t *d = user_data;
+	struct udata_t t;
+
+	assert(d);
+	assert(d->database);
+	
+	t.d = d;
+	t.tablename = values[0];
+	t.uuid = values[1];
+	t.timestamp = *(long *)values[2];
+	t.deleted = *(long *)values[4];
+
+	/* TODO: get row from table and upload to YD <22-04-26, yourname> */
 	
 	return 0;
 }
@@ -136,12 +175,18 @@ void upload_to_yandex_disk(kdydm_t *d)
 	assert(d);
 	assert(d->database);
 	
+	// updates
+	sprintf(SQL, "SELECT * FROM _kdata2_updates");
+	kdata2_get(d->database, SQL, 
+			d, get_updates);
+	
+	// new records in tables
 	do {
 		kdata2_table_for_each(d) {
 			struct udata_t t;
 			t.d = d;
-			t.table = table;
-			t.uploaded = 0;
+			t.tablename = table->tablename;
+			t.deleted = 0;
 			
 			sprintf(SQL, "SELECT %s, ", UUIDCOLUMN);
 			do {
@@ -150,12 +195,14 @@ void upload_to_yandex_disk(kdydm_t *d)
 					strcat(SQL, ", ");
 				}
 				sprintf(SQL, "%stimestamp FROM '%s' "
-					   "WHERE 'YANDEX_DISK_UPLOADED' != 1;",
+						"WHERE (YANDEX_DISK_UPLOADED IS NULL "
+						"OR YANDEX_DISK_UPLOADED = 0);",
 					   SQL, table->tablename);
 				
 			} while(0);
 			
-			kdata2_get(d->database, SQL, &t, upload_to_yandex_disk_cb);
+			kdata2_get(d->database, SQL, 
+					&t, upload_data_row_to_yandex_disk);
 
 		}
 	 } while(0);
