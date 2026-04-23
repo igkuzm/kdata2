@@ -162,3 +162,15 @@ kdydm_t * yandex_disk_module_load(
 }
 
 
+int yandex_disk_module_unload(kdydm_t *d)
+{
+	if (d)
+	{
+		d->do_update = 0;
+		pthread_join(d->tid, NULL);
+		free(d);
+		return 0;
+	}
+
+	return 1;
+}

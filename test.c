@@ -15,6 +15,8 @@
 int progress(
 			void *progressp, pphase phase, int current, int total)
 {
+	if (phase == PPHASE_COUNTING)
+		printf("COUNTING ...\n");
 	if (phase == PPHASE_UPLOADING)
 		printf("UPLOADING: %d%%\n", 
 				current/total*100);
