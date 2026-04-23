@@ -69,7 +69,7 @@ static int upload_json(
 		d->progress(
 				d->progressp, 
 				PPHASE_UPLOADING, 
-				d->current++, 
+				d->current, 
 				d->total);
 
 	return res;
@@ -240,7 +240,6 @@ void upload_to_yandex_disk(kdydm_t *d)
 	// updates
 	d->current = 0;
 	d->total = 0;
-
 	if (d->progress)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
 
@@ -271,9 +270,9 @@ void upload_to_yandex_disk(kdydm_t *d)
 			t.tablename = table->tablename;
 			t.deleted = 0;
 			t.uploaded = 0;
+
 			d->current = 0;
 			d->total = 0;
-
 			if (d->progress)
 				d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
 
