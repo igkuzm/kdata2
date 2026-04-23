@@ -25,8 +25,16 @@ static int upload_json(
 		int deleted,
 		char *json)
 {
+	int res = 0;
 	char path[BUFSIZ];
 
+	if (d->progress)
+		d->progress(
+				d->progressp, 
+				PPHASE_UPLOADING, 
+				d->current++, 
+				d->total);
+	
 	if (deleted)
 		sprintf(path, "app:/%s/%s/%s", 
 				DELETED, tablename, uuid);
@@ -45,7 +53,7 @@ static int upload_json(
 
 	ON_LOG(d->database, STR("upload json to path: %s", 
 		   path));
-	return c_yandex_disk_upload_data(
+	res =  c_yandex_disk_upload_data(
 			d->access_token, 
 			json, 
 			strlen(json), 
@@ -56,6 +64,15 @@ static int upload_json(
 			NULL, 
 			NULL, 
 			NULL);
+
+	if (d->progress)
+		d->progress(
+				d->progressp, 
+				PPHASE_UPLOADING, 
+				d->current++, 
+				d->total);
+
+	return res;
 }
 
 static int upload_data_row_to_yandex_disk(
@@ -80,7 +97,7 @@ static int upload_data_row_to_yandex_disk(
 	ON_LOG(t->d->database, STR("%s '%s' table data with uuid: %s", 
 				t->deleted?"deleting":"uploading",
 		    t->tablename, values[0]));
-	
+
 	object = cJSON_CreateObject();
 	if (object == NULL){
 		ON_ERR(t->d->database, "can't init JSON");
@@ -204,8 +221,9 @@ static int get_updates(
 get_updates_end:
 	if (t.uploaded) {
 		// remove from _kdata2_updates
-		sprintf(SQL, "DELETE FROM _kdata2_updates WHERE "
-				"uuid = '%s'", t.uuid);
+		sprintf(SQL, "UPDATE _kdata2_updates "
+				"SET YANDEX_DISK_UPLOADED = %ld "
+				"WHERE uuid = '%s'", t.timestamp, t.uuid);
 		kdata2_sqlite3_exec(d->database, SQL);
 	}
 	
@@ -214,15 +232,36 @@ get_updates_end:
 
 void upload_to_yandex_disk(kdydm_t *d)
 {
-	char SQL[BUFSIZ];
+	char SQL[BUFSIZ], *count;
 
 	assert(d);
 	assert(d->database);
 	
 	// updates
-	sprintf(SQL, "SELECT * FROM _kdata2_updates");
-	kdata2_get(d->database, SQL, 
-			d, get_updates);
+	d->current = 0;
+	d->total = 0;
+
+	if (d->progress)
+		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
+
+	sprintf(SQL, 
+			"SELECT COUNT(*) FROM _kdata2_updates "
+			"WHERE (YANDEX_DISK_UPLOADED IS NULL "
+			"OR YANDEX_DISK_UPLOADED != timestamp)");
+	count = kdata2_get_string(d->database, SQL);
+	d->total = atoi(count);
+	free(count);
+	ON_LOG(d->database, 
+			STR("Found %d new rows for upload", d->total));
+	
+	if (d->total){
+		sprintf(SQL, 
+				"SELECT * FROM _kdata2_updates "
+				"WHERE (YANDEX_DISK_UPLOADED IS NULL "
+				"OR YANDEX_DISK_UPLOADED != timestamp)");
+		kdata2_get(d->database, SQL, 
+				d, get_updates);
+	}
 	
 	// new records in tables
 	do {
@@ -232,6 +271,24 @@ void upload_to_yandex_disk(kdydm_t *d)
 			t.tablename = table->tablename;
 			t.deleted = 0;
 			t.uploaded = 0;
+			d->current = 0;
+			d->total = 0;
+
+			if (d->progress)
+				d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
+
+			sprintf(SQL, 
+				"SELECT COUNT(*) FROM '%s' "
+				"WHERE (YANDEX_DISK_UPLOADED IS NULL "
+				"OR YANDEX_DISK_UPLOADED = 0)", table->tablename);
+			count = kdata2_get_string(d->database, SQL);
+			d->total = atoi(count);
+			free(count);
+			ON_LOG(d->database, 
+				STR("Found %d new rows for upload", d->total));
+
+			if (d->total == 0)
+				break;
 			
 			sprintf(SQL, "SELECT %s, ", UUIDCOLUMN);
 			do {

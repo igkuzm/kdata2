@@ -100,6 +100,11 @@ void * thread(void *data)
 						//d->access_token, 
 						//STR("app:/%s", DATAFILES), 
 						//NULL);	
+	
+	sprintf(SQL, 
+				"ALTER TABLE _kdata2_updates "
+				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;");
+	kdata2_sqlite3_exec(d->database, SQL);
 
 	/* Create YD column in each table */
 	do {
@@ -135,3 +140,25 @@ void * thread(void *data)
 
 	pthread_exit(0);
 }
+
+kdydm_t * yandex_disk_module_load(
+		kdata2_t * database, 
+		const char    * access_token, // Yandex Disk access token,
+		void *progressp,
+		int (*progress)(
+			void *progressp, pphase phase, int current, int total)
+	  )
+{
+	kdydm_t *d = yandex_disk_module_init(
+			database, access_token, YANDEX_DISK_UPDATE_SEC);
+	if (d)
+	{
+		d->progressp = progressp;
+		d->progress  = progress;
+		yandex_disk_module_start(d);
+	}
+
+	return d;
+}
+
+

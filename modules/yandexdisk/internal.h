@@ -2,7 +2,7 @@
  * File              : internal.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 22.04.2026
+ * Last Modified Date: 23.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 /**
@@ -27,6 +27,7 @@
 #include "../../kdata2.h"
 #include "cYandexDisk/log.h"
 #include <pthread.h>
+#include "yandexdisk.h"
 
 #define ON_ERR(ptr, msg) \
 	if (ptr->on_error) ptr->on_error(ptr->on_error_data, msg);
@@ -56,6 +57,11 @@ struct kdata_yandex_disk_module{
 	int sec;
 	pthread_t tid;
 	pthread_mutex_t mutex;
+	int current;
+	int total;
+	void *progressp;
+	int (*progress)(
+		void *progressp, pphase phase, int current, int total);
 };
 
 void upload_to_yandex_disk(struct kdata_yandex_disk_module *);

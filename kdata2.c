@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 22.04.2026
+ * Last Modified Date: 23.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -1544,7 +1544,6 @@ char * kdata2_get_string(
 		return NULL;
 	}
 
-	ON_LOG(d, SQL);
 	/*if (kdata2_sqlite3_prepare_v2(d, SQL, &stmt))*/
 	if (kdata2_sqlite3_prepare(d, SQL, &stmt))
 		return NULL;

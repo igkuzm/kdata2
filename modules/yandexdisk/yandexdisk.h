@@ -2,7 +2,7 @@
  * File              : yandexdisk.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 21.04.2026
+ * Last Modified Date: 23.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 /**
@@ -41,17 +41,30 @@ extern "C" {
 #define EXPORTDLL
 #endif
 
+
+#define YANDEX_DISK_UPDATE_SEC 1
+
 typedef struct kdata_yandex_disk_module kdydm_t;
 
+typedef enum progress_phase {
+	PPHASE_NULL,
+	PPHASE_COUNTING,
+	PPHASE_UPLOADING,
+	PPHASE_DOWNLOADING,
+} pphase;
+
 kdydm_t EXPORTDLL *
-yandex_disk_module_init(
-		kdata2_t * database, 
+yandex_disk_module_load(
+		kdata2_t      * database, 
 		const char    * access_token, // Yandex Disk access token,
-		int sec                       // number of seconds of delay to sinc data with Yandex Disk
+		void *progressp,
+		int (*progress)(
+			void *progressp, pphase phase, int current, int total)
 	  );
 
 int EXPORTDLL
-yandex_disk_module_start(kdydm_t *module);
+yandex_disk_module_unload(kdydm_t *module);
+
 
 	
 #ifdef __cplusplus

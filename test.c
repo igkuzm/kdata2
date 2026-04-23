@@ -2,7 +2,7 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 22.04.2026
+ * Last Modified Date: 23.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -10,6 +10,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "modules/yandexdisk/yandexdisk.h"
+
+
+int progress(
+			void *progressp, pphase phase, int current, int total)
+{
+	if (phase == PPHASE_UPLOADING)
+		printf("UPLOADING: %d%%\n", 
+				current/total*100);
+	if (phase == PPHASE_DOWNLOADING)
+		printf("DOWNLOADING: %d%%\n", 
+				current/total*100);
+	return 0;
+}
 
 int callback(
 		void *user_data, int ncols, 
@@ -70,8 +83,7 @@ int main(int argc, char *argv[])
 		fclose(fp);
 	}
 	printf("TOKEN: '%s'\t", token);
-	kdydm_t *module = yandex_disk_module_init(database, token, 1);
-	yandex_disk_module_start(module);
+	yandex_disk_module_load(database, token, NULL, progress);
 	printf("OK\n");
 	/* */
 	
