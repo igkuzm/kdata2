@@ -167,9 +167,9 @@ kdata2_sqlite3_exec(kdata2_t *d, const char *sql);
 int EXPORTDLL 
 kdata2_sqlite3_prepare(kdata2_t *d, const char *sql, sqlite3_stmt **stmt);
 
-int EXPORTDLL 
+char * EXPORTDLL 
 kdata2_sql_select_table_request(
-		kdata2_t *d, char sql[], const char *tablename);
+		kdata2_t *d, const char *tablename);
 
 #define kdata2_sqlite3_for_each(d, sql, stmt) \
 sqlite3_stmt *stmt;\

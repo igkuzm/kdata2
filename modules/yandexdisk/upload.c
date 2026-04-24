@@ -2,10 +2,12 @@
 #include "base64.h"
 #include "yandexdisk.h"
 #include "../../kdata2.h"
+#include "../../str.h"
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 struct udata_t {
@@ -176,13 +178,18 @@ static int get_updates(
 				size_t sizes[]
 				)
 {
-	char SQL[BUFSIZ];
+	char SQL[BUFSIZ], *request = NULL;
 	kdydm_t *d = user_data;
 	struct udata_t t;
+	struct str s;
 
 	assert(d);
 	assert(d->database);
-	
+
+	if (str_init(&s)){
+		ON_ERR(d->database, "can't allocate memory");
+		return 1;
+	}
 	t.d = d;
 	t.tablename = values[0];
 	t.uuid = values[1];
@@ -209,14 +216,19 @@ static int get_updates(
 	}
 
 	/* get row from table and upload to YD */
-	if (kdata2_sql_select_table_request(
-				t.d->database, SQL, t.tablename))
+	request = kdata2_sql_select_table_request(
+				t.d->database, t.tablename);
+	if (request == NULL)
 		return 0;
+
+	str_append(&s, request, strlen(request));
+	free(request);
 	
-	sprintf(SQL, "%sWHERE %s = '%s'", 
-			SQL, UUIDCOLUMN, t.uuid);
-	kdata2_get(d->database, SQL, 
+	str_appendf(&s, "WHERE %s = '%s'", 
+			UUIDCOLUMN, t.uuid);
+	kdata2_get(d->database, s.str, 
 			&t, upload_data_row_to_yandex_disk);
+	free(s.str);
 	
 get_updates_end:
 	if (t.uploaded) {
@@ -232,10 +244,14 @@ get_updates_end:
 
 void upload_to_yandex_disk(kdydm_t *d)
 {
-	char SQL[BUFSIZ], *count;
+	char SQL[BUFSIZ], *count = NULL, *request = NULL;
+	struct str s;
 
 	assert(d);
 	assert(d->database);
+
+	if (str_init(&s))
+		return;
 	
 	// updates
 	d->current = 0;
@@ -276,7 +292,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 			if (d->progress)
 				d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
 
-			sprintf(SQL, 
+			snprintf(SQL, BUFSIZ,
 				"SELECT COUNT(*) FROM '%s' "
 				"WHERE (YANDEX_DISK_UPLOADED IS NULL "
 				"OR YANDEX_DISK_UPLOADED = 0)", table->tablename);
@@ -289,21 +305,20 @@ void upload_to_yandex_disk(kdydm_t *d)
 			if (d->total == 0)
 				break;
 			
-			sprintf(SQL, "SELECT %s, ", UUIDCOLUMN);
-			do {
-				kdata2_column_for_each(table) {
-					strcat(SQL, column->columnname);
-					strcat(SQL, ", ");
-				}
-				sprintf(SQL, "%stimestamp FROM '%s' "
-						"WHERE (YANDEX_DISK_UPLOADED IS NULL "
-						"OR YANDEX_DISK_UPLOADED = 0);",
-					   SQL, table->tablename);
+			request = kdata2_sql_select_table_request(
+						t.d->database, t.tablename);
+			if (request == NULL)
+				break;
+
+			str_appendf(&s, "timestamp FROM '%s' "
+					"WHERE (YANDEX_DISK_UPLOADED IS NULL "
+					"OR YANDEX_DISK_UPLOADED = 0);",
+					 table->tablename);
+			free(request);
 				
-			} while(0);
-			
 			kdata2_get(d->database, SQL, 
 					&t, upload_data_row_to_yandex_disk);
+			free(s.str);
 
 		}
 	 } while(0);
