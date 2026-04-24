@@ -2,7 +2,7 @@
  * File              : kdata2.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 23.04.2026
+ * Last Modified Date: 24.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -986,12 +986,10 @@ int kdata2_sql_select_table_request(
 int kdata2_init(
 		kdata2_t ** database,
 		const char * filepath,
-		const char * access_token,
 		void          *on_error_data,
 		void         (*on_error)      (void *on_error_data, const char *error),
 		void          *on_log_data,
 		void         (*on_log)        (void *on_log_data, const char *message),		
-		int sec,
 		...
 		)
 {
@@ -1052,9 +1050,6 @@ int kdata2_init(
 	d->on_log_data   = on_log_data;
 	d->on_log        = on_log;
 
-	/* set data attributes */
-	d->sec = sec;
-
 	strncpy(d->filepath, filepath, BUFSIZ-1);
 	d->filepath[BUFSIZ-1] = 0;
 	
@@ -1084,7 +1079,7 @@ int kdata2_init(
 	}
 
 	//init va_args
-	va_start(args, sec);
+	va_start(args, on_log);
 
 	table = va_arg(args, struct kdata2_table *);
 	if (!table)
@@ -1211,15 +1206,6 @@ int kdata2_init(
 	ON_LOG(d, SQL_updates);
 	kdata2_sqlite3_exec(d, SQL_updates);
 
-	/* if no token */
-	if (!access_token)
-		access_token = "";
-
-	strncpy(d->access_token, access_token, sizeof(d->access_token));
-	
-	/* start Yandex Disk daemon */
-	/*_yd_daemon_init(d);*/
-	
 	return 0;
 }
 
@@ -1685,20 +1671,6 @@ int kdata2_close(kdata2_t *d){
 		sqlite3_close(d->db);
 
 	//free(d);
-	return 0;
-}
-
-int kdata2_set_access_token(kdata2_t * d, const char *access_token){
-
-	if (!d)
-		return -1;
-	
-	if (!access_token){
-		ON_ERR(d, "access_token is NULL");
-		return -1;
-	}
-
-	strncpy(d->access_token, access_token, sizeof(d->access_token));
 	return 0;
 }
 

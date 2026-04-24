@@ -2,7 +2,7 @@
  * File              : kdata2.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 10.03.2023
- * Last Modified Date: 22.04.2026
+ * Last Modified Date: 25.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -63,12 +63,7 @@ int EXPORTDLL kdata2_table_init(struct kdata2_table **t, const char * tablename,
 typedef struct kdata2 {
 	sqlite3 *db;                   // sqlite3 database pointer
 	char filepath[BUFSIZ];         // file path to where store SQLite data 	
-	char access_token[64];         // Yandex Disk access token
-	int do_update;                // set to false to stop
-																 // update in thread
 	struct kdata2_table ** tables; // NULL-terminated array of tables pointers
-	int sec;				       // number of seconds of delay to sinc data with Yandex Disk
-	pthread_t tid;                 // Yandex Disk daemon thread id
 	void *on_error_data;           // pointer to transfer through on_error callback
 	void (*on_error)(              // callback on error
 			void *on_error_data, 
@@ -85,17 +80,12 @@ int EXPORTDLL
 kdata2_init(
 		kdata2_t     ** database,     // pointer to kdata2_t
 		const char    * filepath,     // file path to where store SQLite data
-		const char    * access_token, // Yandex Disk access token (may be NULL)
 		void          *on_error_data,
 		void         (*on_error)      (void *on_error_data, const char *error),
 		void          *on_log_data,
 		void         (*on_log)        (void *on_log_data, const char *message),
-		int sec,                      // number of seconds of delay to sinc data with Yandex Disk
 		...							  // kdata2_table, NULL
 );
-/* set access_token */
-int EXPORTDLL
-kdata2_set_access_token(kdata2_t * database, const char *access_token);
 
 /* close database and free memory */
 int EXPORTDLL kdata2_close(kdata2_t *dataset);

@@ -33,7 +33,9 @@ endif
 if WITH_YANDEX_DISK
 SUBDIRS += cYandexDisk
 libkdata2_la_SOURCES += \
-		modules/yandexdisk/init.c modules/yandexdisk/upload.c 
+		modules/yandexdisk/init.c \
+		modules/yandexdisk/upload.c \
+		modules/yandexdisk/download.c
 endif
 
 libkdata2_la_LIBADD = $(CYD_OBJ) $(CURL_LINK) $(CYD_LINK)

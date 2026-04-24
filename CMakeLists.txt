@@ -26,7 +26,7 @@ if(${WITH_YANDEX_DISK})
 	add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 	list(APPEND ADDSRC modules/yandexdisk/init.c)	
 	list(APPEND ADDSRC modules/yandexdisk/upload.c)	
-	list(APPEND ADDSRC modules/yandexdisk/cYandexDisk/cJSON.c)	
+	list(APPEND ADDSRC modules/yandexdisk/download.c)	
 	list(APPEND ADDLIBS cYandexDisk)	
 endif()
 

@@ -66,6 +66,18 @@ yandex_disk_module_load(
 int EXPORTDLL
 yandex_disk_module_unload(kdydm_t *module);
 
+void EXPORTDLL
+yandex_disk_set_file_download_progress(
+		kdydm_t *module,
+		void *file_progressp,
+		int (*file_progress)(  //progress callback function
+			void *clientp,		   //data pointer return from progress function
+			double dltotal,      //downloaded total size
+			double dlnow,		     //downloaded size
+			double ultotal,      //uploaded total size
+			double ulnow         //uploaded size
+		)
+	);
 
 	
 #ifdef __cplusplus

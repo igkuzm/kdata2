@@ -2,7 +2,7 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 23.04.2026
+ * Last Modified Date: 25.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -23,6 +23,14 @@ int progress(
 	if (phase == PPHASE_DOWNLOADING)
 		printf("DOWNLOADING: %d%%\n", 
 				current/total*100);
+	return 0;
+}
+
+int file_progress(void *d, double dlt, double dln, double ut, double un)
+{
+	printf("FILE TRANSFER: U: %lf%%, D: %lf%%\n",
+			un/ut*100, dln/dlt*100);
+
 	return 0;
 }
 
@@ -61,6 +69,11 @@ void on_log(void *data, const char *msg){
 		printf("%s\n", msg);
 }
 
+void on_err(void *data, const char *msg){
+	if (msg)
+		printf("\x1B[31m%s\x1B[0m\n", msg);
+}
+
 int main(int argc, char *argv[])
 {
 	printf("kdata2 test start...\n");
@@ -73,7 +86,7 @@ int main(int argc, char *argv[])
 
 	printf("kdata2 init database...\t");
 	kdata2_t *database;
-	kdata2_init(&database, "database.db", "",  NULL, on_log, NULL, on_log, 10, t, NULL);
+	kdata2_init(&database, "database.db", NULL, on_err, NULL, on_log, t, NULL);
 	printf("OK\n");
 	
 	/* YANDEX DISK */
@@ -85,7 +98,12 @@ int main(int argc, char *argv[])
 		fclose(fp);
 	}
 	printf("TOKEN: '%s'\t", token);
-	yandex_disk_module_load(database, token, NULL, progress);
+	kdydm_t *module = yandex_disk_module_load(
+			database, token, NULL, progress);
+	yandex_disk_set_file_download_progress(
+			module, 
+			NULL, 
+			file_progress);
 	printf("OK\n");
 	/* */
 	

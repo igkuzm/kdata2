@@ -29,11 +29,140 @@ struct ddata_node {
 	int deleted;
 };
 
+static int json_to_database_for_column(
+		struct ddata_node *node, cJSON *object, struct kdata2_column *column)
+{
+	char *uuid = NULL;
+	cJSON *item;
+
+	ON_LOG(node->t->d->database, 
+			STR("json to database for column: %s", column->columnname));
+
+	item = cJSON_GetObjectItem(object, column->columnname);
+	if (item == NULL)
+		return 1;
+
+	switch (column->type) {
+		case KDATA2_TYPE_NUMBER:
+			{
+				long value = cJSON_GetNumberValue(item);
+				uuid = kdata2_set_number_for_uuid(
+						node->t->d->database, 
+						node->tablename, 
+						column->columnname, 
+						value, 
+						node->uuid);
+			}
+			break;
+	
+		case KDATA2_TYPE_FLOAT:
+			{
+				double value = cJSON_GetNumberValue(item);
+				uuid = kdata2_set_float_for_uuid(
+						node->t->d->database, 
+						node->tablename, 
+						column->columnname, 
+						value, 
+						node->uuid);
+			}
+			break;
+		
+		case KDATA2_TYPE_TEXT:
+			{
+				const char *value = cJSON_GetStringValue(item);
+				uuid = kdata2_set_text_for_uuid(
+						node->t->d->database, 
+						node->tablename, 
+						column->columnname, 
+						value, 
+						node->uuid);
+			}
+			break;
+
+		case KDATA2_TYPE_DATA:
+			{
+				size_t len = 0;
+				unsigned char *data = NULL;
+				const char *value = cJSON_GetStringValue(item);
+
+				data = base64_decode(
+						value, 
+						strlen(value), 
+						&len);
+
+				if (data)
+				{
+					uuid = kdata2_set_data_for_uuid(
+							node->t->d->database, 
+							node->tablename, 
+							column->columnname, 
+							data,
+						  len,	
+							node->uuid);
+				}
+			}
+			break;
+
+		default:
+			break;
+			
+	}
+
+	return uuid == NULL;
+}
+
 static void json_to_database(
 		struct ddata_node *node, cJSON *object)
 {
+	int err = 0;
 	char SQL[BUFSIZ];
 
+	do {
+		kdata2_table_for_each(node->t->d->database)
+		{
+			// find table
+			if (strcmp(table->tablename, node->tablename) == 0)
+			{
+				do {
+					kdata2_column_for_each(table)
+					{
+						err = 1;
+						if (json_to_database_for_column(node, object, column))
+							break;
+						err = 0;
+					}
+				} while(0);
+
+				if (err){
+					ON_ERR(node->t->d->database, 
+							STR("ERROR in tables while parsing JSON "
+								"with path: app:/%s/%s/%s/%ld",
+							node->deleted?DELETED:DATABASE, 
+							node->tablename, node->uuid, node->timestamp));
+					break;
+				}
+
+				snprintf(SQL, BUFSIZ, 
+						"UPDATE _kdata2_updates SET "
+						"timestamp = %ld, "
+						"YANDEX_DISK_UPLOADED = %ld "
+						"WHERE uuid = '%s';",
+						node->timestamp, node->timestamp, node->uuid);
+				kdata2_sqlite3_exec(node->t->d->database, SQL);
+
+				snprintf(SQL, BUFSIZ, 
+						"UPDATE '%s' SET "
+						"timestamp = %ld, "
+						"YANDEX_DISK_UPLOADED = 1 "
+						"WHERE %s = '%s';",
+						node->tablename, 
+						node->timestamp, 
+						UUIDCOLUMN, node->uuid);
+				kdata2_sqlite3_exec(node->t->d->database, SQL);
+
+			}
+		}
+	} while(0);
 }
 
 static void parse_json(
@@ -41,6 +170,11 @@ static void parse_json(
 {
 	struct ddata_node *node = data;
 	cJSON *object;
+
+	ON_LOG(node->t->d->database, 
+		STR("parsing JSON with path: app:/%s/%s/%s/%ld",
+		node->deleted?DELETED:DATABASE, 
+		node->tablename, node->uuid, node->timestamp));
 
 	if (error)
 		ON_ERR(node->t->d->database, error);
@@ -51,8 +185,14 @@ static void parse_json(
 				(const char *)json, size);
 		if (object){
 			json_to_database(node, object);
+			return;
 		}
 	}
+		
+	ON_ERR(node->t->d->database, 
+		STR("ERROR parsing JSON with path: app:/%s/%s/%s/%ld",
+		node->deleted?DELETED:DATABASE, 
+		node->tablename, node->uuid, node->timestamp));
 }
 
 static int make_downloads(struct ddata_node *node)
@@ -66,6 +206,12 @@ static int make_downloads(struct ddata_node *node)
 	assert(node->t);
 	assert(node->t->d);
 	assert(node->t->d->database);
+
+
+	ON_LOG(node->t->d->database, 
+			STR("Making %s for uuid: %s timestamp: %ld", 
+				phase==PPHASE_DOWNLOADING?"downloads":"deletings",
+				node->uuid, node->timestamp));
 
 	if (node->deleted)
 		phase = PPHASE_DELETING;
@@ -133,10 +279,17 @@ static int for_each_timestamp(
 		timestamp_local = 
 			kdata2_get_string(t->d->database, SQL); 
 
+		ON_LOG(t->d->database, 
+				STR("Check timestamp: %ld(local): %ld(remote) for uuid: %s", 
+					timestamp_local?atol(timestamp_local):0,
+					t->timestamp, t->uuid));
+
 		if (timestamp_local == NULL || 
 				atol(timestamp_local) < t->timestamp)
 		{
 			// add to download list
+			ON_LOG(t->d->database, "add to download list"); 
+
 			struct ddata_node *node = NEW(struct ddata_node);
 			if (node){
 				node->deleted = t->deleted;
@@ -148,11 +301,18 @@ static int for_each_timestamp(
 
 				if (list_add(&t->to_download, node) == 0)
 					t->d->total++;
+
+				return 0;
 			}
-		}
+			
+			ON_ERR(t->d->database, "memory allocation error"); 
+		} 
+
+		ON_LOG(t->d->database, "No need to update");
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 
@@ -172,6 +332,9 @@ static int for_each_uuid(
 		snprintf(path, BUFSIZ, "app:/%s/%s/%s",
 				t->deleted?DELETED:DATABASE, t->tablename, t->uuid);
 
+		ON_LOG(t->d->database, 
+				STR("search updates in: %s", path));
+
 		c_yandex_disk_sort_ls(
 				t->d->access_token, 
 				path, 
@@ -179,26 +342,36 @@ static int for_each_uuid(
 				1,
 				t, 
 				for_each_timestamp);
+
+		return 0;
 	}
 
-	return 0;
+	snprintf(path, BUFSIZ, "app:/%s/%s",
+			t->deleted?DELETED:DATABASE, t->tablename);
+
+	ON_ERR(t->d->database, 
+			STR("ERROR in path: %s", path));
+
+	return 1;
 }
 
 static int for_each_table(struct ddata_t *t)
 {
-	int ret;
 	char path[BUFSIZ];
 
 	snprintf(path, BUFSIZ, "app:/%s/%s",
 			t->deleted?DELETED:DATABASE, t->tablename);
 
-	ret = c_yandex_disk_ls(
+	ON_LOG(t->d->database, 
+			STR("search updates in: %s", path));
+
+	c_yandex_disk_ls(
 				t->d->access_token, 
 				path, 
 				t, 
 				for_each_uuid);
 
-	return ret;
+	return 0;
 }
 
 void download_from_yandex_disk(kdydm_t *d)

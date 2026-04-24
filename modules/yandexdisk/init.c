@@ -77,6 +77,7 @@ void main_loop(kdydm_t *d)
 	 * 8. remove local data for deleted */
 	
 	upload_to_yandex_disk(d);
+	download_from_yandex_disk(d);
 }
 
 void * thread(void *data)
@@ -173,4 +174,20 @@ int yandex_disk_module_unload(kdydm_t *d)
 	}
 
 	return 1;
+}
+
+void yandex_disk_set_file_download_progress(
+		kdydm_t *module,
+		void *file_progressp,
+		int (*file_progress)( 
+			void *clientp,		 
+			double dltotal,   
+			double dlnow,		 
+			double ultotal, 
+			double ulnow        
+		))
+{
+	assert(module);
+	module->file_progressp = file_progressp;
+	module->file_progressp = file_progress;
 }
