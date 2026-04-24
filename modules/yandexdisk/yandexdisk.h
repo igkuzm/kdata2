@@ -2,7 +2,7 @@
  * File              : yandexdisk.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 23.04.2026
+ * Last Modified Date: 24.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 /**
@@ -51,6 +51,7 @@ typedef enum progress_phase {
 	PPHASE_COUNTING,
 	PPHASE_UPLOADING,
 	PPHASE_DOWNLOADING,
+	PPHASE_DELETING,
 } pphase;
 
 kdydm_t EXPORTDLL *

@@ -62,8 +62,8 @@ static int upload_json(
 			true, 
 			NULL, 
 			NULL, 
-			NULL, 
-			NULL);
+			d->file_progressp, 
+			d->file_progress);
 
 	if (d->progress)
 		d->progress(

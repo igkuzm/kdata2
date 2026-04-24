@@ -2,7 +2,7 @@
  * File              : internal.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 23.04.2026
+ * Last Modified Date: 24.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 /**
@@ -62,8 +62,17 @@ struct kdata_yandex_disk_module{
 	void *progressp;
 	int (*progress)(
 		void *progressp, pphase phase, int current, int total);
+	void *file_progressp;
+	int (*file_progress)(  //progress callback function
+			void *clientp,		   //data pointer return from progress function
+			double dltotal,        //downloaded total size
+			double dlnow,		   //downloaded size
+			double ultotal,        //uploaded total size
+			double ulnow           //uploaded size
+		);
 };
 
 void upload_to_yandex_disk(struct kdata_yandex_disk_module *);
+void download_from_yandex_disk(struct kdata_yandex_disk_module *);
 
 #endif /* ifndef YANDEX_DISK_STRUCT_H */
