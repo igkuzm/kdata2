@@ -96,8 +96,12 @@ static int upload_data_row_to_yandex_disk(
 	assert(t->d);
 	assert(t->d->database);
 	assert(values);
-	assert(values[0]);
-	assert(values[num_cols - 1]);
+	
+	if (values[0] == NULL || values[num_cols-1] == NULL)
+	{
+		ON_ERR(t->d->database, "broken table row data");
+		return 1;
+	}
 	
 	ON_LOG(t->d->database, STR("%s '%s' table data with uuid: %s", 
 				t->deleted?"deleting":"uploading",
@@ -301,7 +305,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 			snprintf(SQL, BUFSIZ,
 				"SELECT COUNT(*) FROM '%s' "
 				"WHERE (YANDEX_DISK_UPLOADED IS NULL "
-				"OR YANDEX_DISK_UPLOADED = 0)", table->tablename);
+				"OR YANDEX_DISK_UPLOADED = 0) ", table->tablename);
 			count = kdata2_get_string(d->database, SQL);
 			d->total = atoi(count);
 			free(count);
