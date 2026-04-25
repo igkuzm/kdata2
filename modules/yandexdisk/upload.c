@@ -51,7 +51,8 @@ static int upload_json(
 						path, 
 						NULL);
 
-	sprintf(path, "%s/%ld", path, timestamp);
+	snprintf(path, BUFSIZ, 
+			"%s/%ld", path, timestamp);
 
 	ON_LOG(d->database, STR("upload json to path: %s", 
 		   path));
@@ -364,11 +365,13 @@ void upload_to_yandex_disk(kdydm_t *d)
 				continue;
 			}
 
+			str_append(&s, request, strlen(request));
+			free(request);
+
 			str_appendf(&s, "timestamp FROM '%s' "
 					"WHERE (YANDEX_DISK_UPLOADED IS NULL "
 					"OR YANDEX_DISK_UPLOADED = 0);",
 					 table->tablename);
-			free(request);
 				
 			kdata2_get(d->database, SQL, 
 					&t, upload_data_row_to_yandex_disk);
