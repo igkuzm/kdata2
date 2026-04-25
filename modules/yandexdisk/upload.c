@@ -310,7 +310,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 			if (request == NULL)
 			{
 				ON_ERR(d->database, "SQL request is NULL");
-				continue;;
+				continue;
 			}
 
 			str_appendf(&s, "timestamp FROM '%s' "

@@ -114,13 +114,13 @@ char * kdata2_sql_select_table_request(
 				} while(0);
 				str_appendf(&s, "timestamp FROM '%s' ", 
 						table->tablename);
-				return 0;
+				return s.str;
 			}
 	 }
 	} while(0);
 
 	ON_ERR(d, STR("No table with name: %s", tablename));		
-	return s.str;
+	return NULL;
 }
 
 int kdata2_init(
