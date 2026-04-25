@@ -126,21 +126,18 @@ static void json_to_database(
 				do {
 					kdata2_column_for_each(table)
 					{
-						err = 1;
-						if (json_to_database_for_column(node, object, column))
-							break;
-						err = 0;
+						json_to_database_for_column(node, object, column);
 					}
 				} while(0);
 
-				if (err){
-					ON_ERR(node->t->d->database, 
-							STR("ERROR in tables while parsing JSON "
-								"with path: app:/%s/%s/%s/%ld",
-							node->deleted?DELETED:DATABASE, 
-							node->tablename, node->uuid, node->timestamp));
-					break;
-				}
+				//if (err){
+					//ON_ERR(node->t->d->database, 
+							//STR("ERROR in tables while parsing JSON "
+								//"with path: app:/%s/%s/%s/%ld",
+							//node->deleted?DELETED:DATABASE, 
+							//node->tablename, node->uuid, node->timestamp));
+					//break;
+				//}
 
 				snprintf(SQL, BUFSIZ, 
 						"UPDATE _kdata2_updates SET "
