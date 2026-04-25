@@ -376,10 +376,9 @@ void upload_to_yandex_disk(kdydm_t *d)
 			str_append(&s, request, strlen(request));
 			free(request);
 
-			str_appendf(&s, "timestamp FROM '%s' "
+			str_appendf(&s,
 					"WHERE (YANDEX_DISK_UPLOADED IS NULL "
-					"OR YANDEX_DISK_UPLOADED = 0);",
-					 table->tablename);
+					"OR YANDEX_DISK_UPLOADED = 0);");
 				
 			kdata2_get(d->database, s.str, 
 					&t, upload_data_row_to_yandex_disk);
