@@ -67,7 +67,8 @@ int kdata2_sqlite3_exec(
 	{
 		ON_LOG(d, sql);
 		sqlite3_exec(d->db, sql, NULL, NULL, &errmsg);
-		if (errmsg){
+		if (errmsg && strstr(errmsg, "duplicate column name") == NULL)
+		{
 			ON_ERR(d, 
 				   STR("sqlite3_exec: %s: %s", sql, errmsg));		
 			sqlite3_free(errmsg);	
