@@ -17,6 +17,7 @@ struct udata_t {
 	time_t timestamp;
 	int deleted;
 	int uploaded;
+	struct str list_of_updates;
 };
 
 static int upload_json(
@@ -174,7 +175,7 @@ static int upload_data_row_to_yandex_disk(
 		t->uploaded = 1;
 
 		// add to update rows
-		str_appendf(&t->d->rows, "%s/%s/%s\n",
+		str_appendf(&t->list_of_updates, "%s/%s/%s\n",
 				t->deleted?DELETED:DATABASE, 
 				t->tablename, uuid);
 	}
@@ -258,47 +259,46 @@ get_updates_end:
 	return 0;
 }
 
-static void save_update_rows(kdydm_t *d)
+static void save_update_rows(struct udata_t *t)
 {
 	int res;
 	char path[BUFSIZ];
+
+	assert(t);
+	assert(t->d);
+	assert(t->d->database);
 		
 	sprintf(path, "app:/%s/%ld", 
-				UPDATES, d->timestamp);
+				UPDATES, t->d->timestamp);
 
 	res =  c_yandex_disk_upload_data(
-			d->access_token, 
-			d->rows.str, 
-			strlen(d->rows.str), 
+			t->d->access_token, 
+			t->list_of_updates.str, 
+			t->list_of_updates.len, 
 			path, 
 			false, 
 			true, 
 			NULL, 
 			NULL, 
-			d->file_progressp, 
-			d->file_progress);
+			t->d->file_progressp, 
+			t->d->file_progress);
 
 	if (res){
-		ON_LOG(d->database, STR("can't upload update to path: %s", 
-				 path));
+		ON_LOG(t->d->database, 
+				STR("can't upload update to path: %s", path));
 	}
 }
 
 void upload_to_yandex_disk(kdydm_t *d)
 {
 	char SQL[BUFSIZ], *count = NULL, *request = NULL;
-	struct str s;
 
 	assert(d);
 	assert(d->database);
 
-	if (str_init(&s))
-		return;
-	
 	// updates
 	d->current = 0;
 	d->total = 0;
-	memset(&d->rows, 0, sizeof(struct str));
 	if (d->progress)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 1);
 
@@ -330,13 +330,21 @@ void upload_to_yandex_disk(kdydm_t *d)
 	do {
 		kdata2_table_for_each(d->database) {
 			struct udata_t t;
+			struct str s;
+
+			if (str_init(&t.list_of_updates)){
+		    ON_ERR(d->database, "allocation error");	
+				continue;
+			}
+
+			if (str_init(&s))
+				continue;;
+	
 			t.d = d;
 			t.tablename = table->tablename;
 			t.deleted = 0;
 			t.uploaded = 0;
 			t.timestamp = time(NULL);
-			if (str_init(&d->rows))
-				continue;
 
 			d->current = 0;
 			d->total = 0;
@@ -377,9 +385,8 @@ void upload_to_yandex_disk(kdydm_t *d)
 					&t, upload_data_row_to_yandex_disk);
 			free(s.str);
 
-			save_update_rows(d);
-			free(d->rows.str);
-			memset(&d->rows, 0, sizeof(struct str));
+			save_update_rows(&t);
+			free(t.list_of_updates.str);
 		}
 	 } while(0);
 }

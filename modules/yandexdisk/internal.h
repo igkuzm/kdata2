@@ -58,7 +58,6 @@ struct kdata_yandex_disk_module{
 	int do_update;                 // set to false to stop
 	int sec;
 	time_t timestamp;
-	struct str rows;
 	pthread_t tid;
 	pthread_mutex_t mutex;
 	int current;
