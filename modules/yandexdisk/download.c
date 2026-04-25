@@ -19,6 +19,7 @@ struct ddata_t {
 	char tablename[128];
 	char uuid[37];
 	time_t timestamp;
+	time_t current;
 	int deleted;
 	list_t *to_download;
 	int ret;
@@ -160,6 +161,11 @@ static void json_to_database(
 						UUIDCOLUMN, node->uuid);
 				kdata2_sqlite3_exec(node->t->d->database, SQL);
 
+				snprintf(SQL, BUFSIZ, 
+						"UPDATE _yandexdisk_updates SET "
+						"YANDEX_DISK_UPLOADED = %ld;",
+						node->t->current);
+				kdata2_sqlite3_exec(node->t->d->database, SQL);
 			}
 		}
 	} while(0);
@@ -485,9 +491,14 @@ static int check_updates(struct ddata_t *t)
 	t->d->current = 0;
 	t->d->total = 0;
 
+
 	sprintf(SQL, 
 			"SELECT YANDEX_DISK_UPLOADED FROM _yandexdisk_updates;");
 	last_update = kdata2_get_string(t->d->database, SQL);
+	
+	ON_LOG(t->d->database, 
+			STR("Check updates from last update: %ld", last_update));
+	
 	if (last_update)
 	{
 		t->d->timestamp = atol(last_update);
@@ -504,7 +515,7 @@ static int check_updates(struct ddata_t *t)
 		return t->ret;
 	}
 
-	return 1;
+	return 0;
 }
 
 void download_from_yandex_disk(kdydm_t *d)
@@ -519,6 +530,7 @@ void download_from_yandex_disk(kdydm_t *d)
 	memset(&t, 0, sizeof(t));
 	t.d = d;
 	t.deleted = deleted[i];
+	t.current = time(NULL);
 
 	d->current = 0;
 	d->total = 0;
@@ -527,17 +539,16 @@ void download_from_yandex_disk(kdydm_t *d)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
 	
 	// check updates first
-	updates = check_updates(&t);
-	if (updates){
-		list_for_each(t.to_download, node)
-		{
-			make_downloads(node);
-			free(node);
-		}
-		list_free(&t.to_download);
-
-		return;
-	}
+	//updates = check_updates(&t);
+	//if (updates){
+		//list_for_each(t.to_download, node)
+		//{
+			//make_downloads(node);
+			//free(node);
+		//}
+		//list_free(&t.to_download);
+		//return;
+	//}
 
 	// check all tables if no updates
 	for (i = 0; i < 2; ++i) {
