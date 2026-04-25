@@ -191,3 +191,10 @@ void yandex_disk_set_file_download_progress(
 	module->file_progressp = file_progressp;
 	module->file_progressp = file_progress;
 }
+
+
+int yandex_disk_set_token(kdydm_t *d, const char *token)
+{
+	strncpy(d->access_token, token, sizeof(d->access_token));
+	return 0;
+}

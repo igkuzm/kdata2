@@ -2,7 +2,7 @@
  * File              : yandexdisk.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 24.04.2026
+ * Last Modified Date: 25.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 /**
@@ -65,6 +65,10 @@ yandex_disk_module_load(
 
 int EXPORTDLL
 yandex_disk_module_unload(kdydm_t *module);
+
+
+int EXPORTDLL
+yandex_disk_set_token(kdydm_t *, const char *token);
 
 void EXPORTDLL
 yandex_disk_set_file_download_progress(
