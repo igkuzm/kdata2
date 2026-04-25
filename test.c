@@ -18,13 +18,16 @@ int progress(
 	if (phase == PPHASE_COUNTING)
 		printf("\x1B[32mCOUNTING ...\x1B[0m\n");
 	if (phase == PPHASE_UPLOADING)
-		printf("\x1B[32mUPLOADING: %d%%\x1B[0m\n", 
+		printf("\x1B[32mUPLOADING: %d of %d (%d%%)\x1B[0m\n", 
+				current, total,
 				current/total*100);
 	if (phase == PPHASE_DOWNLOADING)
-		printf("\x1B[32mDOWNLOADING: %d%%\x1B[0m\n", 
+		printf("\x1B[32mDOWNLOADING: %d of %d (%d%%)\x1B[0m\n", 
+				current, total,
 				current/total*100);
 	if (phase == PPHASE_DELETING)
-		printf("\x1B[32mDELETING: %d%%\x1B[0m\n", 
+		printf("\x1B[32mDELETING: %d of %d (%d%%)\x1B[0m\n", 
+				current, total,
 				current/total*100);
 	return 0;
 }
