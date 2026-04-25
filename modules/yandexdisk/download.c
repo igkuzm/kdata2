@@ -279,19 +279,34 @@ static int for_each_timestamp(
 		timestamp_local = 
 			kdata2_get_string(t->d->database, SQL); 
 
-		ON_LOG(t->d->database, 
-				STR("Check timestamp: %ld(local): %ld(remote) for uuid: %s", 
-					timestamp_local?atol(timestamp_local):0,
+		if (t->deleted){
+			ON_LOG(t->d->database, 
+					STR("Check delete timestamp: %ld(local): %ld(remote) for uuid: %s", 
+						timestamp_local?atol(timestamp_local):0,
 					t->timestamp, t->uuid));
+		} else {
+			ON_LOG(t->d->database, 
+					STR("Check update timestamp: %ld(local): %ld(remote) for uuid: %s", 
+						timestamp_local?atol(timestamp_local):0,
+						t->timestamp, t->uuid));
+		}
 
-		if (timestamp_local == NULL || 
-				atol(timestamp_local) < t->timestamp)
+		if (
+				(t->deleted && 
+				timestamp_local != NULL && 
+				atol(timestamp_local) < t->timestamp) ||
+
+				(t->deleted == 0 &&
+				(timestamp_local == NULL || 
+				 atol(timestamp_local) < t->timestamp))
+			 )
 		{
 			// add to download list
 			ON_LOG(t->d->database, "add to download list"); 
 
 			struct ddata_node *node = NEW(struct ddata_node);
 			if (node){
+				node->t = t;
 				node->deleted = t->deleted;
 				node->timestamp = t->timestamp;
 				strncpy(node->tablename,
