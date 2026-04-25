@@ -306,9 +306,12 @@ void upload_to_yandex_disk(kdydm_t *d)
 				break;
 			
 			request = kdata2_sql_select_table_request(
-						t.d->database, t.tablename);
+						d->database, table->tablename);
 			if (request == NULL)
-				break;
+			{
+				ON_ERR(d->database, "SQL request is NULL");
+				continue;;
+			}
 
 			str_appendf(&s, "timestamp FROM '%s' "
 					"WHERE (YANDEX_DISK_UPLOADED IS NULL "
