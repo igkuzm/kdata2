@@ -2,7 +2,7 @@
  * File              : internal.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 24.04.2026
+ * Last Modified Date: 25.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 /**

@@ -143,8 +143,8 @@ void * thread(void *data)
 }
 
 kdydm_t * yandex_disk_module_load(
-		kdata2_t * database, 
-		const char    * access_token, // Yandex Disk access token,
+		kdata2_t    * database, 
+		const char  * access_token, // Yandex Disk access token,
 		void *progressp,
 		int (*progress)(
 			void *progressp, pphase phase, int current, int total)
