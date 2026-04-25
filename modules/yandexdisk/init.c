@@ -195,6 +195,8 @@ void yandex_disk_set_file_download_progress(
 
 int yandex_disk_set_token(kdydm_t *d, const char *token)
 {
+	if (d == NULL)
+		return 1;
 	strncpy(d->access_token, token, sizeof(d->access_token));
 	return 0;
 }
