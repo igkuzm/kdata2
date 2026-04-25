@@ -409,6 +409,7 @@ static void update_list_from_update_file(
 	if (value){
 		strtok_foreach(value, "\n", row){
 			int i = 0;
+			ON_LOG(t->d->database, STR("got update row: %s", row));
 			strtok_foreach(row, "/", token){
 				switch (i) {
 					case 0:
@@ -462,6 +463,7 @@ static int for_each_timestamp_in_updates(
 		ON_ERR(t->d->database, error);
 
 	if (timestamp){
+		ON_LOG(t->d->database, STR("check timestamp: %s", timestamp));
 		// drop old timestamps
 		if (t->d->timestamp >= atol(timestamp->name))
 			return 1;
@@ -539,16 +541,16 @@ void download_from_yandex_disk(kdydm_t *d)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
 	
 	// check updates first
-	//updates = check_updates(&t);
-	//if (updates){
-		//list_for_each(t.to_download, node)
-		//{
-			//make_downloads(node);
-			//free(node);
-		//}
-		//list_free(&t.to_download);
-		//return;
-	//}
+	updates = check_updates(&t);
+	if (updates){
+		list_for_each(t.to_download, node)
+		{
+			make_downloads(node);
+			free(node);
+		}
+		list_free(&t.to_download);
+		return;
+	}
 
 	// check all tables if no updates
 	for (i = 0; i < 2; ++i) {
