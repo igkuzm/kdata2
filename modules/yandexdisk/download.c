@@ -6,6 +6,7 @@
 #include "../../kdata2.h"
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
+#include "strtok_foreach.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,11 +16,12 @@
 
 struct ddata_t {
 	kdydm_t *d;
-	char *tablename;
+	char tablename[128];
 	char uuid[37];
 	time_t timestamp;
 	int deleted;
 	list_t *to_download;
+	int ret;
 };
 
 struct ddata_node {
@@ -388,28 +390,74 @@ static int for_each_table(struct ddata_t *t)
 	return 0;
 }
 
-static void download_update_file(
+static void update_list_from_update_file(
 		void *data, size_t size, void *userdata, const char *error)
 {
-	kdydm_t *d = userdata;
-	struct ddata_node *node = NULL;
+	struct ddata_t *t = userdata;
+	char *value = data, *row, *token;
+	char path[BUFSIZ];
 
 	if (error)
-		ON_ERR(d->database, error);
+		ON_ERR(t->d->database, error);
+
+	if (value){
+		strtok_foreach(value, "\n", row){
+			int i = 0;
+			strtok_foreach(row, "/", token){
+				switch (i) {
+					case 0:
+						t->deleted = (strcmp(token, DELETED) == 0);
+						break;
+
+					case 1:
+						strncpy(t->tablename, token, sizeof(t->tablename));
+						break;
+
+					case 2:
+						strncpy(t->uuid, token, sizeof(t->uuid));
+					
+					default:
+						break;
+				}
+				i++;	
+			}
+			if (i == 3){
+				// get last timestamp and add to update list
+				t->ret = 1;
+
+				snprintf(path, BUFSIZ, "app:/%s/%s/%s",
+						t->deleted?DELETED:DATABASE, t->tablename, t->uuid);
+
+				ON_LOG(t->d->database, 
+						STR("search updates in: %s", path));
+				c_yandex_disk_sort_ls(
+						t->d->access_token, 
+						path, 
+						"-name",
+						1,
+						t, 
+						for_each_timestamp);
+			}
+		}
+	}
 }
 
 static int for_each_timestamp_in_updates(
 		const c_yd_file_t *timestamp, void *data, const char *error)
 {
-	kdydm_t *d = data;
+	struct ddata_t *t = data;
 	char path[BUFSIZ];
 
+	assert(t);
+	assert(t->d);
+	assert(t->d->database);
+
 	if (error)
-		ON_ERR(d->database, error);
+		ON_ERR(t->d->database, error);
 
 	if (timestamp){
 		// drop old timestamps
-		if (d->timestamp >= atol(timestamp->name))
+		if (t->d->timestamp >= atol(timestamp->name))
 			return 1;
 
 		// add to list
@@ -418,11 +466,11 @@ static int for_each_timestamp_in_updates(
 				timestamp->name);
 
 		c_yandex_disk_download_data(
-				d->access_token, 
+				t->d->access_token, 
 				path, 
 				true, 
-				d, 
-				download_update_file, 
+				t, 
+				update_list_from_update_file, 
 				NULL, 
 				NULL);
 	}
@@ -430,31 +478,30 @@ static int for_each_timestamp_in_updates(
 	return 0;
 }
 
-static int check_updates(kdydm_t *d)
+static int check_updates(struct ddata_t *t)
 {
 	char SQL[BUFSIZ], path[BUFSIZ], *last_update;
-	struct ddata_t t;
 	struct ddata_node *node = NULL;
-	memset(&t, 0, sizeof(t));
-	t.d = d;
-	d->current = 0;
-	d->total = 0;
+	t->d->current = 0;
+	t->d->total = 0;
 
 	sprintf(SQL, 
 			"SELECT YANDEX_DISK_UPLOADED FROM _yandexdisk_updates;");
-	last_update = kdata2_get_string(d->database, SQL);
+	last_update = kdata2_get_string(t->d->database, SQL);
 	if (last_update)
 	{
-		d->timestamp = atol(last_update);
+		t->d->timestamp = atol(last_update);
 		// get updates files
 		sprintf(path, "app:/%s", UPDATES);
 		c_yandex_disk_sort_ls(
-				d->access_token, 
+				t->d->access_token, 
 				path, 
 				"-name", 
 				0, 
-				d, 
+				t, 
 				for_each_timestamp_in_updates);
+
+		return t->ret;
 	}
 
 	return 1;
@@ -463,10 +510,16 @@ static int check_updates(kdydm_t *d)
 void download_from_yandex_disk(kdydm_t *d)
 {
 	int i, ret = 0, updates = 0, deleted[] = {0, 1};
-
+	struct ddata_t t;
+	struct ddata_node *node = NULL;
+		
 	assert(d);
 	assert(d->database);
 		
+	memset(&t, 0, sizeof(t));
+	t.d = d;
+	t.deleted = deleted[i];
+
 	d->current = 0;
 	d->total = 0;
 
@@ -474,21 +527,23 @@ void download_from_yandex_disk(kdydm_t *d)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
 	
 	// check updates first
-	updates = check_updates(d);
-	if (updates)
+	updates = check_updates(&t);
+	if (updates){
+		list_for_each(t.to_download, node)
+		{
+			make_downloads(node);
+			free(node);
+		}
+		list_free(&t.to_download);
+
 		return;
+	}
 
 	// check all tables if no updates
 	for (i = 0; i < 2; ++i) {
-		struct ddata_t t;
-		struct ddata_node *node = NULL;
-		
-		memset(&t, 0, sizeof(t));
-		t.d = d;
-		t.deleted = deleted[i];
+		node = NULL;
 		d->current = 0;
 		d->total = 0;
-
 		d->current_table = 0;
 		d->total_tables = kdata2_count_tables(d->database);
 
@@ -499,7 +554,7 @@ void download_from_yandex_disk(kdydm_t *d)
 					d->progress(d->progressp, PPHASE_COUNTING, 
 							d->current_table++, d->total_tables);
 
-				t.tablename = table->tablename;
+				strncpy(t.tablename, table->tablename, sizeof(t.tablename));
 				for_each_table(&t);
 			}
 		} while (0);
