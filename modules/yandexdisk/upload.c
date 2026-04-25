@@ -95,6 +95,9 @@ static int upload_data_row_to_yandex_disk(
 	assert(t);
 	assert(t->d);
 	assert(t->d->database);
+	assert(values);
+	assert(values[0]);
+	assert(values[num_cols - 1]);
 	
 	ON_LOG(t->d->database, STR("%s '%s' table data with uuid: %s", 
 				t->deleted?"deleting":"uploading",
@@ -115,26 +118,26 @@ static int upload_data_row_to_yandex_disk(
 			continue;
 		
 		switch (types[i]) {
-		case KDATA2_TYPE_NUMBER:
-			item = cJSON_CreateNumber(*(long *)(values[i]));
-			break;
-		case KDATA2_TYPE_FLOAT:
-			item = cJSON_CreateNumber(*(double *)(values[i]));
-			break;
-		case KDATA2_TYPE_TEXT:
-			item = cJSON_CreateString((char *)(values[i]));
-			break;
-		case KDATA2_TYPE_DATA:
-		{
-			base64 = base64_encode((unsigned char *)(values[i]), sizes[i], &length);
-			if (base64){
-				item = cJSON_CreateString(base64);
-				free(base64);
+			case KDATA2_TYPE_NUMBER:
+				item = cJSON_CreateNumber(*(long *)(values[i]));
+				break;
+			case KDATA2_TYPE_FLOAT:
+				item = cJSON_CreateNumber(*(double *)(values[i]));
+				break;
+			case KDATA2_TYPE_TEXT:
+				item = cJSON_CreateString((char *)(values[i]));
+				break;
+			case KDATA2_TYPE_DATA:
+			{
+				base64 = base64_encode((unsigned char *)(values[i]), sizes[i], &length);
+				if (base64){
+					item = cJSON_CreateString(base64);
+					free(base64);
+				}
+				break;			
 			}
-			break;			
-		}
-		default:
-			break;
+			default:
+				break;
 		}
 		if (item)
 			cJSON_AddItemToObject(object, columns[i], item);
@@ -202,7 +205,7 @@ static int get_updates(
 
 	if (t.deleted)
 	{
-		char *json = "";
+		char *json = "0";
 		if (upload_json(t.d, 
 					t.tablename, 
 					t.uuid, 
