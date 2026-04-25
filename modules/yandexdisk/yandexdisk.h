@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 
-#define YANDEX_DISK_UPDATE_SEC 1
+#define YANDEX_DISK_UPDATE_SEC 10
 
 typedef struct kdata_yandex_disk_module kdydm_t;
 
