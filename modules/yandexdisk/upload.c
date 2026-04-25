@@ -381,7 +381,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 					"OR YANDEX_DISK_UPLOADED = 0);",
 					 table->tablename);
 				
-			kdata2_get(d->database, SQL, 
+			kdata2_get(d->database, s.str, 
 					&t, upload_data_row_to_yandex_disk);
 			free(s.str);
 
