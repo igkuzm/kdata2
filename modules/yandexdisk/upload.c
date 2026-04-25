@@ -110,6 +110,9 @@ static int upload_data_row_to_yandex_disk(
 		cJSON *item = NULL;
 		char *base64 = NULL;
 		size_t length = 0;
+
+		if (values[i] == NULL)
+			continue;
 		
 		switch (types[i]) {
 		case KDATA2_TYPE_NUMBER:
