@@ -267,7 +267,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 	d->current = 0;
 	d->total = 0;
 	if (d->progress)
-		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
+		d->progress(d->progressp, PPHASE_COUNTING, 0, 1);
 
 	sprintf(SQL, 
 			"SELECT COUNT(*) FROM _kdata2_updates "
@@ -276,6 +276,9 @@ void upload_to_yandex_disk(kdydm_t *d)
 	count = kdata2_get_string(d->database, SQL);
 	d->total = atoi(count);
 	free(count);
+	if (d->progress)
+		d->progress(d->progressp, PPHASE_COUNTING, 1, 1);
+
 	ON_LOG(d->database, 
 			STR("Found %d new rows for upload", d->total));
 	
@@ -289,6 +292,8 @@ void upload_to_yandex_disk(kdydm_t *d)
 	}
 	
 	// new records in tables
+	d->current = 0;
+	d->total_tables = kdata2_count_tables(d->database);
 	do {
 		kdata2_table_for_each(d->database) {
 			struct udata_t t;
@@ -300,7 +305,8 @@ void upload_to_yandex_disk(kdydm_t *d)
 			d->current = 0;
 			d->total = 0;
 			if (d->progress)
-				d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
+				d->progress(d->progressp, PPHASE_COUNTING, 
+						d->current_table++, d->total_tables);
 
 			snprintf(SQL, BUFSIZ,
 				"SELECT COUNT(*) FROM '%s' "
@@ -332,7 +338,6 @@ void upload_to_yandex_disk(kdydm_t *d)
 			kdata2_get(d->database, SQL, 
 					&t, upload_data_row_to_yandex_disk);
 			free(s.str);
-
 		}
 	 } while(0);
 }

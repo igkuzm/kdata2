@@ -59,6 +59,8 @@ struct kdata_yandex_disk_module{
 	pthread_mutex_t mutex;
 	int current;
 	int total;
+	int current_table;
+	int total_tables;
 	void *progressp;
 	int (*progress)(
 		void *progressp, pphase phase, int current, int total);

@@ -16,7 +16,9 @@ int progress(
 			void *progressp, pphase phase, int current, int total)
 {
 	if (phase == PPHASE_COUNTING)
-		printf("\x1B[32mCOUNTING ...\x1B[0m\n");
+		printf("\x1B[32mCOUNTING: %d of %d (%0.2lf%%)\x1B[0m\n", 
+				current, total,
+				(double)current/(double)total*100);
 	if (phase == PPHASE_UPLOADING)
 		printf("\x1B[32mUPLOADING: %d of %d (%0.2lf%%)\x1B[0m\n", 
 				current, total,

@@ -96,6 +96,18 @@ int kdata2_sqlite3_prepare(
 	return 0;
 }
 
+int kdata2_count_tables(kdata2_t *d)
+{
+	int count = 0;
+	do {
+		kdata2_table_for_each(d) {
+			count++;
+	  }
+	} while(0);
+
+	return count;
+}
+
 char * kdata2_sql_select_table_request(
 		kdata2_t *d, const char *tablename)
 {

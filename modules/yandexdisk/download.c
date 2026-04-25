@@ -408,9 +408,16 @@ void download_from_yandex_disk(kdydm_t *d)
 		d->current = 0;
 		d->total = 0;
 
+		d->current_table = 0;
+		d->total_tables = kdata2_count_tables(d->database);
+
 		do {
 			kdata2_table_for_each(d->database)
 			{
+				if (d->progress)
+					d->progress(d->progressp, PPHASE_COUNTING, 
+							d->current_table++, d->total_tables);
+
 				t.tablename = table->tablename;
 				for_each_table(&t);
 			}

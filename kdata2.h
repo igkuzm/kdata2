@@ -167,6 +167,10 @@ kdata2_sqlite3_exec(kdata2_t *d, const char *sql);
 int EXPORTDLL 
 kdata2_sqlite3_prepare(kdata2_t *d, const char *sql, sqlite3_stmt **stmt);
 
+int EXPORTDLL 
+kdata2_count_tables(
+		kdata2_t *d);
+
 char * EXPORTDLL 
 kdata2_sql_select_table_request(
 		kdata2_t *d, const char *tablename);
