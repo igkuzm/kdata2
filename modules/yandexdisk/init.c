@@ -97,11 +97,18 @@ void * thread(void *data)
 						d->access_token, 
 						STR("app:/%s", DELETED  ), 
 						NULL);
-	//c_yandex_disk_mkdir(
-						//d->access_token, 
-						//STR("app:/%s", DATAFILES), 
-						//NULL);	
-	
+	c_yandex_disk_mkdir(
+						d->access_token, 
+						STR("app:/%s", UPDATES), 
+						NULL);	
+		
+	sprintf(SQL, 
+			"CREATE TABLE IF NOT EXISTS "
+			  "_yandexdisk_updates (id INT); "
+				"ALTER TABLE _yandexdisk_updates "
+				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;");
+	kdata2_sqlite3_exec(d->database, SQL);
+
 	sprintf(SQL, 
 				"ALTER TABLE _kdata2_updates "
 				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;");

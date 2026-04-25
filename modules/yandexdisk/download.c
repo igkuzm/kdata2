@@ -7,6 +7,7 @@
 #include "cYandexDisk/cYandexDisk.h"
 #include "cYandexDisk/cJSON.h"
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -180,6 +181,7 @@ static void parse_json(
 	{
 		object = cJSON_ParseWithLength(
 				(const char *)json, size);
+		free(json);
 		if (object){
 			json_to_database(node, object);
 			return;
@@ -386,18 +388,97 @@ static int for_each_table(struct ddata_t *t)
 	return 0;
 }
 
+static void download_update_file(
+		void *data, size_t size, void *userdata, const char *error)
+{
+	kdydm_t *d = userdata;
+	struct ddata_node *node = NULL;
+
+	if (error)
+		ON_ERR(d->database, error);
+}
+
+static int for_each_timestamp_in_updates(
+		const c_yd_file_t *timestamp, void *data, const char *error)
+{
+	kdydm_t *d = data;
+	char path[BUFSIZ];
+
+	if (error)
+		ON_ERR(d->database, error);
+
+	if (timestamp){
+		// drop old timestamps
+		if (d->timestamp >= atol(timestamp->name))
+			return 1;
+
+		// add to list
+		snprintf(path, BUFSIZ, 
+				"app:/%s/%s", UPDATES, 
+				timestamp->name);
+
+		c_yandex_disk_download_data(
+				d->access_token, 
+				path, 
+				true, 
+				d, 
+				download_update_file, 
+				NULL, 
+				NULL);
+	}
+
+	return 0;
+}
+
+static int check_updates(kdydm_t *d)
+{
+	char SQL[BUFSIZ], path[BUFSIZ], *last_update;
+	struct ddata_t t;
+	struct ddata_node *node = NULL;
+	memset(&t, 0, sizeof(t));
+	t.d = d;
+	d->current = 0;
+	d->total = 0;
+
+	sprintf(SQL, 
+			"SELECT YANDEX_DISK_UPLOADED FROM _yandexdisk_updates;");
+	last_update = kdata2_get_string(d->database, SQL);
+	if (last_update)
+	{
+		d->timestamp = atol(last_update);
+		// get updates files
+		sprintf(path, "app:/%s", UPDATES);
+		c_yandex_disk_sort_ls(
+				d->access_token, 
+				path, 
+				"-name", 
+				0, 
+				d, 
+				for_each_timestamp_in_updates);
+	}
+
+	return 1;
+}
+
 void download_from_yandex_disk(kdydm_t *d)
 {
-	int i, ret = 0, deleted[] = {0, 1};
+	int i, ret = 0, updates = 0, deleted[] = {0, 1};
 
 	assert(d);
 	assert(d->database);
 		
 	d->current = 0;
 	d->total = 0;
+
 	if (d->progress)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
+	
+	// check updates first
+	updates = check_updates(d);
+	if (updates)
+		return;
 
+	// check all tables if no updates
 	for (i = 0; i < 2; ++i) {
 		struct ddata_t t;
 		struct ddata_node *node = NULL;

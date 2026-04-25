@@ -171,6 +171,11 @@ static int upload_data_row_to_yandex_disk(
 				t->tablename, UUIDCOLUMN, uuid);
 		kdata2_sqlite3_exec(t->d->database, SQL);
 		t->uploaded = 1;
+
+		// add to update rows
+		str_appendf(&t->d->rows, "%s/%s/%s\n",
+				t->deleted?DELETED:DATABASE, 
+				t->tablename, uuid);
 	}
 
 	cJSON_free(object);
@@ -252,6 +257,32 @@ get_updates_end:
 	return 0;
 }
 
+static void save_update_rows(kdydm_t *d)
+{
+	int res;
+	char path[BUFSIZ];
+		
+	sprintf(path, "app:/%s/%ld", 
+				UPDATES, d->timestamp);
+
+	res =  c_yandex_disk_upload_data(
+			d->access_token, 
+			d->rows.str, 
+			strlen(d->rows.str), 
+			path, 
+			false, 
+			true, 
+			NULL, 
+			NULL, 
+			d->file_progressp, 
+			d->file_progress);
+
+	if (res){
+		ON_LOG(d->database, STR("can't upload update to path: %s", 
+				 path));
+	}
+}
+
 void upload_to_yandex_disk(kdydm_t *d)
 {
 	char SQL[BUFSIZ], *count = NULL, *request = NULL;
@@ -266,6 +297,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 	// updates
 	d->current = 0;
 	d->total = 0;
+	memset(&d->rows, 0, sizeof(struct str));
 	if (d->progress)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 1);
 
@@ -301,6 +333,9 @@ void upload_to_yandex_disk(kdydm_t *d)
 			t.tablename = table->tablename;
 			t.deleted = 0;
 			t.uploaded = 0;
+			t.timestamp = time(NULL);
+			if (str_init(&d->rows))
+				continue;
 
 			d->current = 0;
 			d->total = 0;
@@ -319,7 +354,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 				STR("Found %d new rows for upload", d->total));
 
 			if (d->total == 0)
-				break;
+				continue;
 			
 			request = kdata2_sql_select_table_request(
 						d->database, table->tablename);
@@ -338,6 +373,10 @@ void upload_to_yandex_disk(kdydm_t *d)
 			kdata2_get(d->database, SQL, 
 					&t, upload_data_row_to_yandex_disk);
 			free(s.str);
+
+			save_update_rows(d);
+			free(d->rows.str);
+			memset(&d->rows, 0, sizeof(struct str));
 		}
 	 } while(0);
 }

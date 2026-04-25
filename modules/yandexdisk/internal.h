@@ -26,8 +26,10 @@
 #define YANDEX_DISK_STRUCT_H
 #include "../../kdata2.h"
 #include "cYandexDisk/log.h"
+#include <bits/types/time_t.h>
 #include <pthread.h>
 #include "yandexdisk.h"
+#include "../../str.h"
 
 #define ON_ERR(ptr, msg) \
 	if (ptr->on_error) ptr->on_error(ptr->on_error_data, msg);
@@ -48,13 +50,15 @@
 
 #define DATABASE  "database"
 #define DELETED   "deleted"
-//#define DATAFILES "kdata_data"
+#define UPDATES   "updates"
 
 struct kdata_yandex_disk_module{
 	kdata2_t *database;
 	char access_token[64];         // Yandex Disk access token
 	int do_update;                 // set to false to stop
 	int sec;
+	time_t timestamp;
+	struct str rows;
 	pthread_t tid;
 	pthread_mutex_t mutex;
 	int current;
