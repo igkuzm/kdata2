@@ -16,9 +16,9 @@
 
 struct ddata_t {
 	kdydm_t *d;
-	char tablename[128];
-	char uuid[37];
-	time_t timestamp;
+	//char tablename[128];
+	/*char uuid[37];*/
+	/*time_t timestamp;*/
 	time_t start_of_update;
 	time_t last_update;
 	int deleted;
@@ -165,7 +165,7 @@ static void json_to_database(
 				snprintf(SQL, BUFSIZ, 
 						"UPDATE _yandexdisk_updates SET "
 						"YANDEX_DISK_UPLOADED = %ld;",
-						node->t->current);
+						node->t->start_of_update);
 				kdata2_sqlite3_exec(node->t->d->database, SQL);
 			}
 		}
@@ -264,80 +264,101 @@ static int make_downloads(struct ddata_node *node)
 	return 0;
 }
 
-static int for_each_timestamp(
-		const c_yd_file_t *timestamp, void *data, const char *error)
+static int cmp_local_and_remote_timestamp(
+		struct ddata_t *t, struct ddata_node *node)
 {
-	struct ddata_t *t = data;
-	char path[BUFSIZ];
+	char path[BUFSIZ]; char SQL[BUFSIZ], *timestamp_local;
+	
+	snprintf(SQL, BUFSIZ, 
+			"SELECT timestamp FROM '%s' "
+			"WHERE %s = '%s';",
+			node->tablename, UUIDCOLUMN, node->uuid);
 
-	if (error)
-		ON_ERR(t->d->database, error);
-
-	if (timestamp)
-	{
-		char SQL[BUFSIZ], *timestamp_local;
-		
-		t->timestamp = atol(timestamp->name);
-		
-		snprintf(SQL, BUFSIZ, 
-				"SELECT timestamp FROM '%s' "
-				"WHERE %s = '%s';",
-				t->tablename, UUIDCOLUMN, t->uuid);
-
-		timestamp_local = 
-			kdata2_get_string(t->d->database, SQL); 
-
-		if (t->deleted){
-			ON_LOG(t->d->database, 
-					STR("Check delete timestamp: %ld(local): %ld(remote) for uuid: %s", 
-						timestamp_local?atol(timestamp_local):0,
-					t->timestamp, t->uuid));
-		} else {
-			ON_LOG(t->d->database, 
-					STR("Check update timestamp: %ld(local): %ld(remote) for uuid: %s", 
-						timestamp_local?atol(timestamp_local):0,
-						t->timestamp, t->uuid));
-		}
-
-		if (
-				(t->deleted && 
-				timestamp_local != NULL && 
-				atol(timestamp_local) < t->timestamp) ||
-
-				(t->deleted == 0 &&
-				(timestamp_local == NULL || 
-				 atol(timestamp_local) < t->timestamp))
-			 )
-		{
-			// add to download list
-			ON_LOG(t->d->database, "add to download list"); 
-
-			struct ddata_node *node = NEW(struct ddata_node);
-			if (node){
-				node->t = t;
-				node->deleted = t->deleted;
-				node->timestamp = t->timestamp;
-				strncpy(node->tablename,
-					 	t->tablename, sizeof(node->tablename));
-				strncpy(node->uuid,
-					 	t->uuid, sizeof(node->uuid));
-
-				if (list_add(&t->to_download, node) == 0)
-					t->d->total++;
-
-				return 0;
-			}
-			
-			ON_ERR(t->d->database, "memory allocation error"); 
-		} 
-
-		ON_LOG(t->d->database, "No need to update");
+	timestamp_local = 
+		kdata2_get_string(t->d->database, SQL); 
+	
+	if (timestamp_local == NULL){
+		ON_ERR(t->d->database, "corrupted data");
 		return 0;
 	}
 
-	return 1;
+	ON_LOG(t->d->database, 
+			STR("Check %s timestamp: %ld(local): %ld(remote) for uuid: %s", 
+				node->deleted?"delete":"update",
+				timestamp_local?atol(timestamp_local):0,
+				node->timestamp, node->uuid));
+
+	if (
+			(t->deleted && 
+			timestamp_local != NULL && 
+			atol(timestamp_local) < node->timestamp) ||
+
+			(t->deleted == 0 &&
+			(timestamp_local == NULL || 
+			 atol(timestamp_local) < node->timestamp))
+		 )
+	{
+		// add to download list
+		ON_LOG(t->d->database, "add to download list"); 
+		return 1;
+	} 
+
+	return 0;
 }
 
+static struct ddata_node *node_from_filename(
+		struct ddata_t *t, const char *filename)
+{
+	int i = 0;
+	char *token = NULL;
+	struct ddata_node *node = NULL;
+
+	assert(t);
+	assert(t->d);
+	assert(t->d->database);
+
+
+	ON_LOG(t->d->database, 
+		STR("check timestamp for filename: %s", filename));
+
+	node = NEW(struct ddata_node);
+	if (node == NULL){
+		ON_ERR(t->d->database, "memory allocation error"); 
+		return NULL;
+	}
+
+	node->t = t;
+	node->deleted = t->deleted;
+
+	strtok_foreach(filename, ".", token){
+		switch (i) {
+			case 0:
+				node->timestamp = atol(token);
+				break;
+			case 1:
+				strncpy(node->tablename, token, sizeof(node->tablename));
+				break;
+			case 2:
+				strncpy(node->uuid, token, sizeof(node->uuid));
+				break;
+			
+			default:
+				break;
+				
+		}
+
+		i++;
+	}
+
+	if (i != 3){
+		ON_ERR(t->d->database, 
+				STR("corrupted data for filename: %s", filename));
+		free(node);
+		return NULL;
+	}
+
+	return node;
+}
 
 static int for_each_filename(
 		const c_yd_file_t *file, void *data, const char *error)
@@ -350,44 +371,42 @@ static int for_each_filename(
 
 	if (file)
 	{
+		struct ddata_node *node = 
+			node_from_filename(t, file->name);
+		if (node == NULL)
+			return 0;
 
-		//todo - get timestamp/tablename/uuid from filename
-
-
-		strncpy(t->uuid, uuid->name, sizeof(t->uuid));
-
-		snprintf(path, BUFSIZ, "app:/%s/%s/%s",
-				t->deleted?DELETED:DATABASE, t->tablename, t->uuid);
-
+		// check last update
 		ON_LOG(t->d->database, 
-				STR("search updates in: %s", path));
+				STR("timestamps: %ld(last_update) %ld(remote)", 
+				t->last_update, node->timestamp));
 
-		c_yandex_disk_sort_ls(
-				t->d->access_token, 
-				path, 
-				"-name",
-				1,
-				t, 
-				for_each_timestamp);
+		if (node->timestamp <= t->last_update){
+			ON_LOG(t->d->database, "no need to download");
+			free(node);
+			return 1; // stop listing files
+		}
 
-		return 0;
+		// check local timestamp
+		if (cmp_local_and_remote_timestamp(t, node) == 0){
+			ON_LOG(t->d->database, "no need to download");
+			free(node);
+			return 0; // continue listing files
+		}
+
+		if (list_add(&t->to_download, node) == 0)
+			t->d->total++;
 	}
 
-	snprintf(path, BUFSIZ, "app:/%s/%s",
-			t->deleted?DELETED:DATABASE, t->tablename);
-
-	ON_ERR(t->d->database, 
-			STR("ERROR in path: %s", path));
-
-	return 1;
+	return 0;
 }
 
 static int for_each_file_in_yandex_disk(struct ddata_t *t)
 {
 	char path[BUFSIZ];
 
-	snprintf(path, BUFSIZ, "app:/%s/%s",
-			t->deleted?DELETED:DATABASE, t->tablename);
+	snprintf(path, BUFSIZ, "app:/%s",
+			t->deleted?DELETED:DATABASE);
 
 	ON_LOG(t->d->database, 
 			STR("search updates in: %s", path));
