@@ -17,7 +17,6 @@ struct udata_t {
 	time_t timestamp;
 	int deleted;
 	int uploaded;
-	struct str list_of_updates;
 };
 
 static int upload_json(
@@ -37,24 +36,11 @@ static int upload_json(
 				PPHASE_UPLOADING, 
 				d->current++, 
 				d->total);
-	
-	if (deleted)
-		sprintf(path, "app:/%s/%s/%s", 
-				DELETED, tablename, uuid);
-	else
-		sprintf(path, "app:/%s/%s/%s", 
-				DATABASE, tablename, uuid);
-	
-	ON_LOG(d->database, STR("create path: %s", 
-		   path));
-	c_yandex_disk_mkdir(
-						d->access_token, 
-						path, 
-						NULL);
 
-	snprintf(path, BUFSIZ, 
-			"%s/%ld", path, timestamp);
-
+	sprintf(path, "app:/%s/%ld.%s.%s", 
+			deleted?DELETED:UPDATES, 
+			timestamp, tablename, uuid);
+	
 	ON_LOG(d->database, STR("upload json to path: %s", 
 		   path));
 	res =  c_yandex_disk_upload_data(
@@ -69,6 +55,11 @@ static int upload_json(
 			d->file_progressp, 
 			d->file_progress);
 
+	if (res){
+		ON_ERR(d->database, STR("can't upload json to path: %s", 
+				 path));
+	}
+
 	if (d->progress)
 		d->progress(
 				d->progressp, 
@@ -79,7 +70,7 @@ static int upload_json(
 	return res;
 }
 
-static int upload_data_row_to_yandex_disk(
+static int for_each_row_in_all_columns(
 				void *user_data,
 				int	num_cols,
 				enum KDATA2_TYPE types[],
@@ -173,11 +164,6 @@ static int upload_data_row_to_yandex_disk(
 				t->tablename, UUIDCOLUMN, uuid);
 		kdata2_sqlite3_exec(t->d->database, SQL);
 		t->uploaded = 1;
-
-		// add to update rows
-		str_appendf(&t->list_of_updates, "%s/%s/%s\n",
-				t->deleted?DELETED:DATABASE, 
-				t->tablename, uuid);
 	}
 
 	cJSON_free(object);
@@ -186,7 +172,7 @@ static int upload_data_row_to_yandex_disk(
 	return 0;
 }
 
-static int get_updates(
+static int for_each_row_in_kdata2_updates(
 				void *user_data,
 				int	num_cols,
 				enum KDATA2_TYPE types[],
@@ -203,9 +189,15 @@ static int get_updates(
 	assert(d);
 	assert(d->database);
 
+	if (values == NULL || num_cols < 5)
+	{
+		ON_ERR(d->database, "corrupted data");
+		return 0;
+	}
+
 	if (str_init(&s)){
 		ON_ERR(d->database, "can't allocate memory");
-		return 1;
+		return 0;
 	}
 	t.d = d;
 	t.tablename = values[0];
@@ -259,36 +251,6 @@ get_updates_end:
 	return 0;
 }
 
-static void save_update_rows(struct udata_t *t)
-{
-	int res;
-	char path[BUFSIZ];
-
-	assert(t);
-	assert(t->d);
-	assert(t->d->database);
-		
-	sprintf(path, "app:/%s/%ld", 
-				UPDATES, t->d->timestamp);
-
-	res =  c_yandex_disk_upload_data(
-			t->d->access_token, 
-			t->list_of_updates.str, 
-			t->list_of_updates.len, 
-			path, 
-			false, 
-			true, 
-			NULL, 
-			NULL, 
-			t->d->file_progressp, 
-			t->d->file_progress);
-
-	if (res){
-		ON_LOG(t->d->database, 
-				STR("can't upload update to path: %s", path));
-	}
-}
-
 void upload_to_yandex_disk(kdydm_t *d)
 {
 	char SQL[BUFSIZ], *count = NULL, *request = NULL;
@@ -296,7 +258,7 @@ void upload_to_yandex_disk(kdydm_t *d)
 	assert(d);
 	assert(d->database);
 
-	// updates
+	// updates in _kdata2_updates table
 	d->current = 0;
 	d->total = 0;
 	if (d->progress)
@@ -321,10 +283,10 @@ void upload_to_yandex_disk(kdydm_t *d)
 				"WHERE (YANDEX_DISK_UPLOADED IS NULL "
 				"OR YANDEX_DISK_UPLOADED != timestamp)");
 		kdata2_get(d->database, SQL, 
-				d, get_updates);
+				d, for_each_row_in_kdata2_updates);
 	}
 	
-	// new records in tables
+	// new records in all tables
 	d->current = 0;
 	d->total_tables = kdata2_count_tables(d->database);
 	do {
@@ -332,19 +294,15 @@ void upload_to_yandex_disk(kdydm_t *d)
 			struct udata_t t;
 			struct str s;
 
-			if (str_init(&t.list_of_updates)){
+			if (str_init(&s)){
 		    ON_ERR(d->database, "allocation error");	
 				continue;
 			}
-
-			if (str_init(&s))
-				continue;;
 	
 			t.d = d;
 			t.tablename = table->tablename;
 			t.deleted = 0;
 			t.uploaded = 0;
-			t.timestamp = time(NULL);
 
 			d->current = 0;
 			d->total = 0;
@@ -381,11 +339,8 @@ void upload_to_yandex_disk(kdydm_t *d)
 					"OR YANDEX_DISK_UPLOADED = 0);");
 				
 			kdata2_get(d->database, s.str, 
-					&t, upload_data_row_to_yandex_disk);
+					&t, for_each_row_in_all_columns);
 			free(s.str);
-
-			save_update_rows(&t);
-			free(t.list_of_updates.str);
 		}
 	 } while(0);
 }

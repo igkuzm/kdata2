@@ -63,19 +63,6 @@ int yandex_disk_module_start(kdydm_t *d)
 
 void main_loop(kdydm_t *d)
 {
-/* To update data:
-	 * 1. get list of updates in update and deleted table in local database
-	 with timestamps
-	 * 2. check timestamp of data in Yandex Disk
-	 * 3. upload local data to Yandex Disk if local timestamp >, or data is
-	 deleted
-	 * 4. remove data from local updates (deleted) table
-	 * 5. get list of updates in remote YandexDisk
-	 * 6. download data from Yandex Disk if timestamp > or local data is not
-	 exists
-	 * 7. get list of deleted in Yandex Disk
-	 * 8. remove local data for deleted */
-	
 	upload_to_yandex_disk(d);
 	download_from_yandex_disk(d);
 }
@@ -91,10 +78,6 @@ void * thread(void *data)
 	/* Create Yandex Disk database */
 	c_yandex_disk_mkdir(
 						d->access_token, 
-						STR("app:/%s", DATABASE ), 
-						NULL);
-	c_yandex_disk_mkdir(
-						d->access_token, 
 						STR("app:/%s", DELETED  ), 
 						NULL);
 	c_yandex_disk_mkdir(
@@ -106,7 +89,7 @@ void * thread(void *data)
 			"CREATE TABLE IF NOT EXISTS "
 			  "_yandexdisk_updates (id INT); "
 				"ALTER TABLE _yandexdisk_updates "
-				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;");
+				"ADD COLUMN 'YANDEX_DISK_UPLOADED' Int;");
 	kdata2_sqlite3_exec(d->database, SQL);
 
 	sprintf(SQL, 
@@ -122,16 +105,6 @@ void * thread(void *data)
 				"ADD COLUMN 'YANDEX_DISK_UPLOADED' INT;", 
 				table->tablename);
 			kdata2_sqlite3_exec(d->database, SQL);
-
-			c_yandex_disk_mkdir(
-						d->access_token, 
-						STR("app:/%s/%s", DATABASE, table->tablename), 
-						NULL);
-		
-			c_yandex_disk_mkdir(
-						d->access_token, 
-						STR("app:/%s/%s", DELETED, table->tablename), 
-						NULL);
 		}
 	} while (0);
 	

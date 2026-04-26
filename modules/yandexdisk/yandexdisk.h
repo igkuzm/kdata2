@@ -2,9 +2,10 @@
  * File              : yandexdisk.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 21.04.2026
- * Last Modified Date: 25.04.2026
+ * Last Modified Date: 27.04.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
+
 /**
  * yandexdisk.h
  * Copyright (c) 2026 Igor V. Sementsov <ig.kuzm@gmail.com>
@@ -24,6 +25,28 @@
  */
 
 /* YandexDisk module */
+
+/* Conception:
+ * 1. In database cr3eated additional table
+ * _yandexdisk_update - to store timestamp of last
+ * downloaded update
+ * 2. In database each table altred with column
+ * YANDEX_DISK_UPLOADED - to store timestamp of uploaded
+ * data
+ * 3. Periodicaly select all tables and rows where timestamp
+ * != YANDEX_DISK_UPLOADED - then upload them as JSON to
+ * yandex disk and save with name "timestamp-tablename-uuid"
+ * 4. Then list files in yandex disk sorted with DECS order
+ * - and select files where timestamp > then last downloaded
+ *  update - add them to download list
+ * 5. Foreach in download list - find row in database and
+ * check timestamp. Download JSON and apply changes 
+ */
+
+/*
+ * To use YandexDisk module - just start
+ * yandex_disk_module_load
+ */
 
 #ifndef YANDEX_DISK_H
 #define YANDEX_DISK_H
