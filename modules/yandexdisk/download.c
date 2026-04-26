@@ -162,11 +162,6 @@ static void json_to_database(
 						UUIDCOLUMN, node->uuid);
 				kdata2_sqlite3_exec(node->t->d->database, SQL);
 
-				snprintf(SQL, BUFSIZ, 
-						"UPDATE _yandexdisk_updates SET "
-						"YANDEX_DISK_UPLOADED = %ld;",
-						node->t->start_of_update);
-				kdata2_sqlite3_exec(node->t->d->database, SQL);
 			}
 		}
 	} while(0);
@@ -203,107 +198,97 @@ static void parse_json(
 		node->tablename, node->uuid, node->timestamp));
 }
 
-static int make_downloads(struct ddata_node *node)
+static int download_node(struct ddata_node *node)
 {	
 	int err = 0;
-	pphase phase = PPHASE_DOWNLOADING;
 	char path[BUFSIZ];
-	char SQL[BUFSIZ];
 
 	assert(node);
 	assert(node->t);
 	assert(node->t->d);
 	assert(node->t->d->database);
 
-
 	ON_LOG(node->t->d->database, 
 			STR("Making %s for uuid: %s timestamp: %ld", 
-				phase==PPHASE_DOWNLOADING?"downloads":"deletings",
+				"downloads",
 				node->uuid, node->timestamp));
 
-	if (node->deleted)
-		phase = PPHASE_DELETING;
+	snprintf(path, BUFSIZ, "app:/%s/%ld.%s.%s",
+			node->deleted?DELETED:DATABASE, 
+			node->timestamp,
+			node->tablename, node->uuid);
+	
+	err = c_yandex_disk_download_data(
+		node->t->d->access_token, 
+		path, 
+		true, 
+		node, 
+		parse_json,
+		node->t->d->file_progressp, 
+		node->t->d->file_progress);
 
 	if (node->t->d->progress)
 		node->t->d->progress(
 				node->t->d->progressp, 
-				phase, 
-				node->t->d->current++, 
-				node->t->d->total);
-
-	if (node->deleted == 0){
-		snprintf(path, BUFSIZ, "app:/%s/%s/%s/%ld",
-				node->deleted?DELETED:DATABASE, 
-				node->tablename, node->uuid, node->timestamp);
-		
-		err = c_yandex_disk_download_data(
-			node->t->d->access_token, 
-			path, 
-			true, 
-			node, 
-			parse_json,
-			node->t->d->file_progressp, 
-			node->t->d->file_progress);
-
-	} else {
-		// remove from database
-		sprintf(SQL, 
-				"DELETE FROM '%s' WHERE %s = '%s';",
-				node->tablename, UUIDCOLUMN, node->uuid);
-
-		kdata2_sqlite3_exec(node->t->d->database, SQL);
-	}
-
-	if (node->t->d->progress)
-		node->t->d->progress(
-				node->t->d->progressp, 
-				phase, 
-				node->t->d->current, 
+				PPHASE_DOWNLOADING, 
+				++node->t->d->current, 
 				node->t->d->total);
 
 	return 0;
 }
 
-static int cmp_local_and_remote_timestamp(
+
+static int delete_node(struct ddata_node *node)
+{
+	// remove from database
+	int err = 0;
+	char SQL[BUFSIZ];
+
+	ON_LOG(node->t->d->database, 
+			STR("Making %s for uuid: %s timestamp: %ld", 
+				"deleting",
+				node->uuid, node->timestamp));
+	
+	sprintf(SQL, 
+			"DELETE FROM '%s' WHERE %s = '%s';",
+			node->tablename, UUIDCOLUMN, node->uuid);
+
+	err = kdata2_sqlite3_exec(node->t->d->database, SQL);
+
+	if (node->t->d->progress)
+		node->t->d->progress(
+				node->t->d->progressp, 
+				PPHASE_DELETING, 
+				++node->t->d->current, 
+				node->t->d->total);
+
+	return err;
+}
+
+static int local_remote_timestamp_cmp(
 		struct ddata_t *t, struct ddata_node *node)
 {
-	char path[BUFSIZ]; char SQL[BUFSIZ], *timestamp_local;
+	int timestamp_local = 0;
+	char path[BUFSIZ]; char SQL[BUFSIZ], *timestamp_local_str;
 	
 	snprintf(SQL, BUFSIZ, 
 			"SELECT timestamp FROM '%s' "
 			"WHERE %s = '%s';",
 			node->tablename, UUIDCOLUMN, node->uuid);
 
-	timestamp_local = 
+	timestamp_local_str = 
 		kdata2_get_string(t->d->database, SQL); 
 	
-	if (timestamp_local == NULL){
-		ON_ERR(t->d->database, "corrupted data");
-		return 0;
-	}
+	if (timestamp_local_str)
+		timestamp_local = atol(timestamp_local_str);
 
 	ON_LOG(t->d->database, 
 			STR("Check %s timestamp: %ld(local): %ld(remote) for uuid: %s", 
 				node->deleted?"delete":"update",
-				timestamp_local?atol(timestamp_local):0,
+				timestamp_local,
 				node->timestamp, node->uuid));
 
-	if (
-			(t->deleted && 
-			timestamp_local != NULL && 
-			atol(timestamp_local) < node->timestamp) ||
-
-			(t->deleted == 0 &&
-			(timestamp_local == NULL || 
-			 atol(timestamp_local) < node->timestamp))
-		 )
-	{
-		// add to download list
-		ON_LOG(t->d->database, "add to download list"); 
-		return 1;
-	} 
-
-	return 0;
+	return timestamp_local - node->timestamp;
 }
 
 static struct ddata_node *node_from_filename(
@@ -388,7 +373,9 @@ static int for_each_filename(
 		}
 
 		// check local timestamp
-		if (cmp_local_and_remote_timestamp(t, node) == 0){
+		if (local_remote_timestamp_cmp(t, node) < 0){
+			ON_LOG(t->d->database, "add to download list");
+		} else {
 			ON_LOG(t->d->database, "no need to download");
 			free(node);
 			return 0; // continue listing files
@@ -401,8 +388,9 @@ static int for_each_filename(
 	return 0;
 }
 
-static int for_each_file_in_yandex_disk(struct ddata_t *t)
+static int prepare_updates_list(struct ddata_t *t)
 {
+	int err = 0;
 	char path[BUFSIZ];
 
 	snprintf(path, BUFSIZ, "app:/%s",
@@ -411,13 +399,49 @@ static int for_each_file_in_yandex_disk(struct ddata_t *t)
 	ON_LOG(t->d->database, 
 			STR("search updates in: %s", path));
 
-	c_yandex_disk_sort_ls(
+	err = c_yandex_disk_sort_ls(
 				t->d->access_token, 
 				path, 
 				"-name",
 				0,
 				t, 
 				for_each_filename);
+
+	return err;
+}
+
+static int apply_updates_list(struct ddata_t *t)
+{
+	struct ddata_node *node = NULL;
+	pphase phase = PPHASE_DOWNLOADING;
+	char SQL[BUFSIZ];
+
+	if (t->deleted)
+		phase = PPHASE_DELETING;
+
+	if (t->d->progress)
+		t->d->progress(
+				t->d->progressp, 
+				phase, 
+				t->d->current, 
+				t->d->total);
+
+	list_for_each(t->to_download, node)
+	{
+		if (node->deleted)
+			delete_node(node);
+		else
+			download_node(node);
+		free(node);
+	}
+	list_free(&t->to_download);
+	t->to_download = NULL;
+
+	snprintf(SQL, BUFSIZ, 
+			"UPDATE _yandexdisk_updates SET "
+			"YANDEX_DISK_UPLOADED = %ld;",
+			t->start_of_update);
+	kdata2_sqlite3_exec(t->d->database, SQL);
 
 	return 0;
 }
@@ -426,7 +450,6 @@ void download_from_yandex_disk(kdydm_t *d)
 {
 	int i, ret = 0, updates = 0;
 	struct ddata_t t;
-	struct ddata_node *node = NULL;
 	char SQL[BUFSIZ], *last_update = NULL;
 		
 	assert(d);
@@ -440,7 +463,7 @@ void download_from_yandex_disk(kdydm_t *d)
 	d->total = 0;
 
 	if (d->progress)
-		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
+		d->progress(d->progressp, PPHASE_COUNTING, 0, 2);
 
 	// get timestamp of last update
 	snprintf(SQL, BUFSIZ, 
@@ -451,26 +474,18 @@ void download_from_yandex_disk(kdydm_t *d)
 	
 	// check for updates and deleted
 	for (i = 0; i < 2; ++i) {
-		node = NULL;
-		d->current = 0;
-		d->total = 0;
 		d->current_table = 0;
-		d->total_tables = kdata2_count_tables(d->database);
-	
 		t.deleted = i;
+
+		prepare_updates_list(&t);
 
 		if (d->progress)
 			d->progress(d->progressp, PPHASE_COUNTING, 
-					d->current_table++, d->total_tables);
+					++d->current_table, 2);
+	}
 
-		//strncpy(t.tablename, table->tablename, sizeof(t.tablename));
-		for_each_file_in_yandex_disk(&t);
-
-		list_for_each(t.to_download, node)
-		{
-			make_downloads(node);
-			free(node);
-		}
-		list_free(&t.to_download);
+	for (i = 0; i < 2; ++i) {
+		t.deleted = i;
+		apply_updates_list(&t);
 	}
 }
