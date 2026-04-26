@@ -541,7 +541,7 @@ void download_from_yandex_disk(kdydm_t *d)
 		d->progress(d->progressp, PPHASE_COUNTING, 0, 0);
 	
 	// check updates first
-	updates = check_updates(&t);
+/* updates = check_updates(&t);
 	if (updates){
 		list_for_each(t.to_download, node)
 		{
@@ -550,7 +550,7 @@ void download_from_yandex_disk(kdydm_t *d)
 		}
 		list_free(&t.to_download);
 		return;
-	}
+	}*/
 
 	// check all tables if no updates
 	for (i = 0; i < 2; ++i) {
