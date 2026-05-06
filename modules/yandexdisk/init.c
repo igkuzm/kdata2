@@ -89,7 +89,10 @@ void * thread(void *data)
 			"CREATE TABLE IF NOT EXISTS "
 			  "_yandexdisk_updates (id INT); "
 				"ALTER TABLE _yandexdisk_updates "
-				"ADD COLUMN 'YANDEX_DISK_UPLOADED' Int;");
+				"ADD COLUMN 'YANDEX_DISK_UPLOADED' Int;"
+				"INSERT INTO '_yandexdisk_updates' (YANDEX_DISK_UPLOADED) "
+				"SELECT 'YANDEX_DISK_UPLOADED' "
+			  "WHERE NOT EXISTS (SELECT 1 FROM '_yandexdisk_updates'); ");
 	kdata2_sqlite3_exec(d->database, SQL);
 
 	sprintf(SQL, 

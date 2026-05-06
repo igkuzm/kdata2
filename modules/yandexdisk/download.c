@@ -376,7 +376,7 @@ static int for_each_filename(
 		if (local_remote_timestamp_cmp(t, node) < 0){
 			ON_LOG(t->d->database, "add to download list");
 		} else {
-			ON_LOG(t->d->database, "no need to download");
+			ON_LOG(t->d->database, "skip from download list");
 			free(node);
 			return 0; // continue listing files
 		}
