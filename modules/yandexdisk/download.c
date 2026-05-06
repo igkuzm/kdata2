@@ -175,7 +175,7 @@ static void parse_json(
 
 	ON_LOG(node->t->d->database, 
 		STR("parsing JSON with path: app:/%s/%s/%s/%ld",
-		node->deleted?DELETED:DATABASE, 
+		node->deleted?DELETED:UPDATES, 
 		node->tablename, node->uuid, node->timestamp));
 
 	if (error)
@@ -194,7 +194,7 @@ static void parse_json(
 		
 	ON_ERR(node->t->d->database, 
 		STR("ERROR parsing JSON with path: app:/%s/%s/%s/%ld",
-		node->deleted?DELETED:DATABASE, 
+		node->deleted?DELETED:UPDATES, 
 		node->tablename, node->uuid, node->timestamp));
 }
 
@@ -214,7 +214,7 @@ static int download_node(struct ddata_node *node)
 				node->uuid, node->timestamp));
 
 	snprintf(path, BUFSIZ, "app:/%s/%ld.%s.%s",
-			node->deleted?DELETED:DATABASE, 
+			node->deleted?DELETED:UPDATES, 
 			node->timestamp,
 			node->tablename, node->uuid);
 	
@@ -394,7 +394,7 @@ static int prepare_updates_list(struct ddata_t *t)
 	char path[BUFSIZ];
 
 	snprintf(path, BUFSIZ, "app:/%s",
-			t->deleted?DELETED:DATABASE);
+			t->deleted?DELETED:UPDATES);
 
 	ON_LOG(t->d->database, 
 			STR("search updates in: %s", path));
@@ -467,7 +467,7 @@ void download_from_yandex_disk(kdydm_t *d)
 
 	// get timestamp of last update
 	snprintf(SQL, BUFSIZ, 
-			"SELECT YANDEX_DISK_UPLOADED FROM _yandexdisk_updates SET");
+			"SELECT YANDEX_DISK_UPLOADED FROM _yandexdisk_updates");
 	last_update = kdata2_get_string(d->database, SQL); 	
 	if (last_update)
 		t.last_update = atol(last_update);
@@ -482,10 +482,12 @@ void download_from_yandex_disk(kdydm_t *d)
 		if (d->progress)
 			d->progress(d->progressp, PPHASE_COUNTING, 
 					++d->current_table, 2);
-	}
 
-	for (i = 0; i < 2; ++i) {
-		t.deleted = i;
 		apply_updates_list(&t);
 	}
+
+	//for (i = 0; i < 2; ++i) {
+		//t.deleted = i;
+		//apply_updates_list(&t);
+	//}
 }

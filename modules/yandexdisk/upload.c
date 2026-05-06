@@ -236,7 +236,7 @@ static int for_each_row_in_kdata2_updates(
 	str_appendf(&s, "WHERE %s = '%s'", 
 			UUIDCOLUMN, t.uuid);
 	kdata2_get(d->database, s.str, 
-			&t, upload_data_row_to_yandex_disk);
+			&t, for_each_row_in_all_columns);
 	free(s.str);
 	
 get_updates_end:
