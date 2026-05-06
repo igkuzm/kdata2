@@ -31,7 +31,7 @@ libkdata2_la_SOURCES += test.c
 endif
 
 if WITH_YANDEX_DISK
-SUBDIRS += cYandexDisk
+SUBDIRS += modules/yandexdisk/cYandexDisk
 libkdata2_la_SOURCES += \
 		modules/yandexdisk/init.c \
 		modules/yandexdisk/upload.c \

@@ -61,7 +61,7 @@ AM_CONDITIONAL([WIN64], [test "$build_windows" = "yes" -a "$build_x86_64" == "ye
 
 AC_CONFIG_FILES([
 Makefile
-cYandexDisk/Makefile
+modules/yandexdisk/cYandexDisk/Makefile
 ])
 AC_OUTPUT
 
