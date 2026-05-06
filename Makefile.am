@@ -1,5 +1,6 @@
 #config to create kdata2 lib with automake
 ACLOCAL_AMFLAGS="-I m4"
+AUTOMAKE_OPTIONS = subdir-objects
 
 SUBDIRS = 
 lib_LTLIBRARIES = libkdata2.la
