@@ -26,7 +26,6 @@
 #define YANDEX_DISK_STRUCT_H
 #include "../../kdata2.h"
 #include "cYandexDisk/log.h"
-#include <bits/types/time_t.h>
 #include <pthread.h>
 #include "yandexdisk.h"
 #include "../../str.h"
