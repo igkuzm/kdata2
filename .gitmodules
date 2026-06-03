@@ -1,3 +1,6 @@
 [submodule "cYandexDisk"]
 	path = modules/yandexdisk/cYandexDisk
 	url = https://github.com/igkuzm/cYandexDisk
+[submodule "modules/yclients/cYclients"]
+	path = modules/yclients/cYclients
+	url = git@github.com:igkuzm/cYclients
