@@ -34,6 +34,9 @@ if(${WITH_YCLIENTS})
 	list(APPEND ADDSRC modules/yclients/cYclients/src/companies.c)	
 	list(APPEND ADDSRC modules/yclients/cYclients/src/curl_transport.c)	
 	list(APPEND ADDSRC modules/yclients/cYclients/src/custom_fields.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/records.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/services.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/stb_ds.c)	
 endif()
 
 include_directories(${KDATA2_SOURCE_DIR})	
@@ -71,7 +74,6 @@ endif()
 add_library(${TARGET} STATIC
 	kdata2.c
 	uuid4.c
-	log.c
 	cJSON.c
 	${SQLITE_SRC}
 	${ADDSRC}
