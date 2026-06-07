@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([libkdata2], [1.1])
+AC_INIT([libkdata2], [1.2])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 
@@ -27,6 +27,15 @@ AC_ARG_ENABLE([yandexdisk],
 							 [with_yandexdisk=no])
 
 AM_CONDITIONAL([WITH_YANDEX_DISK], [test "$with_yandexdisk" = "yes"])
+
+AC_ARG_ENABLE([yclients], 
+							[AS_HELP_STRING([--with-yclients], [Build
+							 Yclients support @<:@no@:>@])],
+							 [with_yclients=yes],
+							 [with_yclients=no])
+
+AM_CONDITIONAL([WITH_YCLIENTS], [test "$with_yclients" = "yes"])
+
 
 AC_CANONICAL_HOST
 case "${host_os}" in
@@ -61,7 +70,6 @@ AM_CONDITIONAL([WIN64], [test "$build_windows" = "yes" -a "$build_x86_64" == "ye
 
 AC_CONFIG_FILES([
 Makefile
-modules/yandexdisk/cYandexDisk/Makefile
 ])
 AC_OUTPUT
 

@@ -5,16 +5,20 @@ AUTOMAKE_OPTIONS = subdir-objects
 SUBDIRS = 
 lib_LTLIBRARIES = libkdata2.la
 
-libkdata2_la_SOURCES = \
-		kdata2.c kdata2.h sqlite3/sqlite3.c
+nobase_include_HEADERS = \
+  kdata2.h \
+  cJSON.h \
+  log.h \
+  sqlite3/sqlite3.h \
 
-libkdata2_la_CFLAGS =
+libkdata2_la_SOURCES = \
+		kdata2.c sqlite3/sqlite3.c cJSON.c
+
+libkdata2_la_CFLAGS = -I$(top_srcdir)
 
 if WINDOWS
-CYD_LINK = -lcYandexDisk -LcYandexDisk/.libs
 else
 CURL_LINK   = -lcurl
-CYD_OBJ = cYandexDisk/*.o 
 endif
 
 if WIN32
@@ -32,11 +36,25 @@ libkdata2_la_SOURCES += test.c
 endif
 
 if WITH_YANDEX_DISK
-SUBDIRS += modules/yandexdisk/cYandexDisk
 libkdata2_la_SOURCES += \
 		modules/yandexdisk/init.c \
 		modules/yandexdisk/upload.c \
-		modules/yandexdisk/download.c
+		modules/yandexdisk/download.c \
+		modules/yandexdisk/cYandexDisk/cYandexDisk.c \
+		modules/yandexdisk/cYandexDisk/cYandexOAuth.c
 endif
 
-libkdata2_la_LIBADD = $(CYD_OBJ) $(CURL_LINK) $(CYD_LINK)
+if WITH_YCLIENTS
+libkdata2_la_SOURCES += \
+		modules/yclients/cYclients/src/auth.c \
+		modules/yclients/cYclients/src/categories.c \
+		modules/yclients/cYclients/src/clients.c \
+		modules/yclients/cYclients/src/companies.c \
+		modules/yclients/cYclients/src/curl_transport.c \
+		modules/yclients/cYclients/src/custom_fields.c \
+		modules/yclients/cYclients/src/records.c \
+		modules/yclients/cYclients/src/services.c \
+		modules/yclients/cYclients/src/stb_ds.c	
+endif
+
+libkdata2_la_LIBADD = $(CURL_LINK)

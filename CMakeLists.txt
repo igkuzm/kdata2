@@ -25,6 +25,7 @@ if(${WITH_YANDEX_DISK})
 	list(APPEND ADDSRC modules/yandexdisk/upload.c)	
 	list(APPEND ADDSRC modules/yandexdisk/download.c)	
 	list(APPEND ADDSRC modules/yandexdisk/cYandexDisk/cYandexDisk.c)	
+	list(APPEND ADDSRC modules/yandexdisk/cYandexDisk/cYandexOAuth.c)	
 endif()
 
 if(${WITH_YCLIENTS})
