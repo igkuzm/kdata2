@@ -11,7 +11,7 @@ if (NOT DEFINED KDATA2_SOURCE_DIR)
 endif ()
 
 project(
-	${TARGET} VERSION 1.1 
+	${TARGET} VERSION 1.2 
 	DESCRIPTION "C library for SQLite database with Yandex Disk sync"
 	LANGUAGES C 
 )
@@ -21,13 +21,19 @@ if(APPLE)
 endif()
 
 if(${WITH_YANDEX_DISK})
-	set(CYANDEXDISK_SOURCE_DIR
-		${KDATA2_SOURCE_DIR}/modules/yandexdisk/cYandexDisk)
-	add_subdirectory(${CYANDEXDISK_SOURCE_DIR})
 	list(APPEND ADDSRC modules/yandexdisk/init.c)	
 	list(APPEND ADDSRC modules/yandexdisk/upload.c)	
 	list(APPEND ADDSRC modules/yandexdisk/download.c)	
-	list(APPEND ADDLIBS cYandexDisk)	
+	list(APPEND ADDSRC modules/yandexdisk/cYandexDisk/cYandexDisk.c)	
+endif()
+
+if(${WITH_YCLIENTS})
+	list(APPEND ADDSRC modules/yclients/cYclients/src/auth.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/categories.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/clients.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/companies.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/curl_transport.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/custom_fields.c)	
 endif()
 
 include_directories(${KDATA2_SOURCE_DIR})	
@@ -65,6 +71,8 @@ endif()
 add_library(${TARGET} STATIC
 	kdata2.c
 	uuid4.c
+	log.c
+	cJSON.c
 	${SQLITE_SRC}
 	${ADDSRC}
 )
