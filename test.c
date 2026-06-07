@@ -2,14 +2,16 @@
  * File              : test.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 14.03.2023
- * Last Modified Date: 25.04.2026
+ * Last Modified Date: 07.06.2026
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
 #include "kdata2.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "modules/yandexdisk/yandexdisk.h"
+#include "modules/yclients/cYclients/cYclients.h"
 
 
 int progress(
@@ -82,9 +84,47 @@ void on_err(void *data, const char *msg){
 		printf("\x1B[31m%s\x1B[0m\n", msg);
 }
 
+
+int companies_cb(void *userdata, const CYCCompany *company)
+{
+	printf("COMPANY: %s\n", company->title);
+	return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
 	printf("kdata2 test start...\n");
+
+	char secret[16], login[32], password[32];
+	int company_id;
+	
+	if (argc < 2){
+		//printf("usage: %s login password\n", argv[0]);
+		//return 0;
+		printf("enter login\n");
+		scanf("%31s", login);
+		printf("enter password\n");
+		scanf("%31s", password);
+	} else {
+		strncat(login,argv[1],31);
+		strncat(password,argv[2],31);
+	}
+	
+	const CYCUser *user = NULL;
+	const CYC2fa  *user2fa = NULL;
+	CYCLIENTS_AUTH auth = CYCLIENTS_AUTH_ERROR;
+
+	auth = cyclients_login(login, password,
+		 	&user, &user2fa);
+	
+	cyclients_companies(user->user_token,
+			NULL,
+		 	NULL, companies_cb);
+
+	return 0;
+
+
 	
 	struct kdata2_table *t;
 	kdata2_table_init(&t, "pers", 

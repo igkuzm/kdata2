@@ -16,6 +16,10 @@ project(
 	LANGUAGES C 
 )
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  list(APPEND CMAKE_C_FLAGS "-DDEBUG")
+endif()
+
 if(APPLE)
 	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -framework Foundation")
 endif()
@@ -37,6 +41,7 @@ if(${WITH_YCLIENTS})
 	list(APPEND ADDSRC modules/yclients/cYclients/src/custom_fields.c)	
 	list(APPEND ADDSRC modules/yclients/cYclients/src/records.c)	
 	list(APPEND ADDSRC modules/yclients/cYclients/src/services.c)	
+	list(APPEND ADDSRC modules/yclients/cYclients/src/structs.c)	
 	list(APPEND ADDSRC modules/yclients/cYclients/src/stb_ds.c)	
 endif()
 

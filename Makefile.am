@@ -54,6 +54,7 @@ libkdata2_la_SOURCES += \
 		modules/yclients/cYclients/src/custom_fields.c \
 		modules/yclients/cYclients/src/records.c \
 		modules/yclients/cYclients/src/services.c \
+		modules/yclients/cYclients/src/structs.c \
 		modules/yclients/cYclients/src/stb_ds.c	
 endif
 
